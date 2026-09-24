@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cranoly — Vetted teachers for PLE, UCE and UACE</title>
+  <meta name="description" content="Find a vetted teacher for PLE, UCE or UACE coaching in Kampala and Wakiso. At your home or online. Book by the session and pay with Mobile Money." />
+  <meta name="theme-color" content="#FBFAF6" />
+  <link rel="icon" href="app/icons/icon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Instrument+Sans:wght@400..700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="shared/tokens.css" />
+  <link rel="stylesheet" href="landing.css" />
+</head>
+<body>
+  <!-- ============ NAV ============ -->
+  <header class="nav" id="nav">
+    <div class="container nav-inner">
+      <a class="logo" href="./" aria-label="Cranoly home"><span class="logo-mark" data-logo></span><span>cranoly</span></a>
+      <nav class="nav-links" id="navLinks" aria-label="Main">
+        <a href="app/#/search">Find a teacher</a>
+        <a href="#how">How it works</a>
+        <a href="#safety">Safety</a>
+        <a href="#teach">Teach with us</a>
+        <div class="nav-mobile-actions">
+          <a class="btn btn-ghost" href="app/#/welcome">Log in</a>
+          <a class="btn btn-primary" href="app/#/onboarding">Get started</a>
+        </div>
+      </nav>
+      <div class="nav-actions">
+        <a class="nav-login" href="app/#/welcome">Log in</a>
+        <a class="btn btn-primary btn-sm" href="app/#/onboarding">Get started</a>
+        <button class="nav-toggle" id="navToggle" type="button" aria-label="Open menu" aria-expanded="false"><span></span><span></span></button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- ============ HERO ============ -->
+    <section class="hero">
+      <div class="container hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow reveal"><span class="dot"></span> PLE · UCE · UACE coaching</p>
+          <h1 class="reveal" style="--d:.05s">The right teacher, <span class="scribble">before<svg viewBox="0 0 300 30" preserveAspectRatio="none" aria-hidden="true"><path d="M4 20 C 60 6, 120 28, 180 14 S 270 8, 296 18" /></svg></span> the exam.</h1>
+          <p class="lede reveal" style="--d:.12s">Vetted teachers who come to your home, or teach online. Book by the session, pay with Mobile Money, and see exactly how your child is doing.</p>
+
+          <form class="search reveal" style="--d:.2s" id="heroSearch">
+            <label class="search-field">
+              <span class="search-label">Subject</span>
+              <select id="heroSubject" name="subject" aria-label="Subject"></select>
+            </label>
+            <label class="search-field">
+              <span class="search-label">Area</span>
+              <select id="heroArea" name="area" aria-label="Area"></select>
+            </label>
+            <button class="btn btn-primary btn-lg" type="submit">Find teachers <span data-icon="arrow"></span></button>
+          </form>
+
+          <div class="trust reveal" style="--d:.28s">
+            <div class="avatar-stack" id="avatarStack"></div>
+            <div>
+              <div class="stars" aria-label="4.8 out of 5"><span data-icon="star"></span><span data-icon="star"></span><span data-icon="star"></span><span data-icon="star"></span><span data-icon="star"></span> <b>4.8</b></div>
+              <small>every teacher ID-checked before joining</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-art" aria-hidden="true">
+          <div class="arch"><img src="https://i.pravatar.cc/600?img=45" alt="" /></div>
+          <div class="float f1">
+            <img src="https://i.pravatar.cc/120?img=45" alt="" />
+            <div><small>Today · 5:00 PM</small><b>Maths at home</b></div>
+            <span class="live"></span>
+          </div>
+          <div class="float f2">
+            <p class="bubble them">Brian did well on simultaneous equations today.</p>
+            <p class="bubble me">Thank you Grace 🙏</p>
+          </div>
+          <div class="float f3 sticker"><span data-icon="badge"></span> UNEB examiner</div>
+          <div class="float f4">
+            <small>UCE countdown</small>
+            <b>47 days</b>
+            <div class="bars"><i style="--h:35%"></i><i style="--h:50%"></i><i style="--h:45%"></i><i style="--h:70%"></i><i style="--h:65%"></i><i style="--h:88%"></i><i style="--h:100%"></i></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ MARQUEE ============ -->
+    <div class="marquee-wrap" aria-hidden="true">
+      <div class="marquee">
+        <div class="marquee-track">
+          <span>Mathematics</span><span>Physics</span><span>Chemistry</span><span>Biology</span><span>English</span><span>Kiswahili</span>
+          <span>Mathematics</span><span>Physics</span><span>Chemistry</span><span>Biology</span><span>English</span><span>Kiswahili</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ STATS ============ -->
+    <section class="stats container">
+      <div class="stat reveal"><b>1,200+</b><span>vetted teachers</span></div>
+      <div class="stat reveal" style="--d:.06s"><b>9</b><span>areas covered</span></div>
+      <div class="stat reveal" style="--d:.12s"><b>4.8 ★</b><span>average session rating</span></div>
+      <div class="stat reveal" style="--d:.18s"><b>18,000</b><span>UGX per hour, from</span></div>
+    </section>
+
+    <!-- ============ HOW IT WORKS ============ -->
+    <section class="section how" id="how">
+      <div class="container">
+        <div class="section-head">
+          <h2 class="reveal">Three steps to a<br />teacher at your door</h2>
+        </div>
+        <div class="steps">
+          <article class="step reveal">
+            <span class="step-n">01</span>
+            <h3>Tell us the class</h3>
+            <p>P5 to S6, and the subjects that need work. We show teachers who actually teach that syllabus and can reach your area.</p>
+            <div class="step-visual chips">
+              <span class="chip on">S4</span><span class="chip on">Mathematics</span><span class="chip">Physics</span><span class="chip on">Nakawa</span>
+            </div>
+          </article>
+          <article class="step reveal" style="--d:.08s">
+            <span class="step-n">02</span>
+            <h3>Book and pay by MoMo</h3>
+            <p>Pick a time that fits around school. Approve the payment on your phone. Your money is held until the session is done.</p>
+            <div class="step-visual slots">
+              <span>3:00</span><span class="on">5:00</span><span>5:30</span><span>6:00</span><span>7:00</span><span class="off">8:00</span>
+            </div>
+          </article>
+          <article class="step step--dark reveal" style="--d:.16s">
+            <span class="step-n">03</span>
+            <h3>They show up</h3>
+            <p>At your home, at theirs, or online. After each session you get a short note on what was covered and what to revise.</p>
+            <div class="step-visual streak">
+              <i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on today"></i><i></i>
+              <span><span data-icon="check"></span> 6 weeks running</span>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SAFETY ============ -->
+    <section class="section container" id="safety">
+      <div class="section-head">
+        <h2 class="reveal">You are letting someone<br />near your child.</h2>
+      </div>
+      <p class="lede reveal" style="max-width:640px;margin-bottom:40px">So we check properly, and we tell you exactly what we checked. No teacher appears on Cranoly until all four are done.</p>
+      <div class="safety-grid">
+        <article class="safety-card reveal"><span class="safety-ic" data-icon="badge"></span><h3>National ID verified</h3><p>Matched against the name and photo on the profile you see.</p></article>
+        <article class="safety-card reveal" style="--d:.06s"><span class="safety-ic" data-icon="book"></span><h3>Qualifications seen</h3><p>Teaching certificate or degree checked and recorded on file.</p></article>
+        <article class="safety-card reveal" style="--d:.12s"><span class="safety-ic" data-icon="users"></span><h3>Two referees called</h3><p>Usually a head teacher who has worked with them directly.</p></article>
+        <article class="safety-card reveal" style="--d:.18s"><span class="safety-ic" data-icon="star"></span><h3>Reviews from paying families only</h3><p>No anonymous ratings. Every review follows a session that was paid for.</p></article>
+      </div>
+    </section>
+
+    <!-- ============ MOMO ============ -->
+    <section class="section container feature" id="pay">
+      <div class="feature-copy">
+        <p class="eyebrow reveal"><span class="dot"></span> Payments</p>
+        <h2 class="reveal">Pay the way you<br />already pay.</h2>
+        <ul class="ticks">
+          <li class="reveal"><span data-icon="wallet"></span><div><b>MTN MoMo and Airtel Money</b><p>Approve on your phone with your PIN. No card, no bank account.</p></div></li>
+          <li class="reveal"><span data-icon="shield"></span><div><b>Money held until the session happens</b><p>If the teacher does not turn up, you are refunded in full.</p></div></li>
+          <li class="reveal"><span data-icon="receipt"></span><div><b>A receipt every time</b><p>Sent to your phone, so you can track what you have spent this term.</p></div></li>
+          <li class="reveal"><span data-icon="calendar"></span><div><b>Session by session</b><p>No subscription, no term fees paid up front. Stop whenever you want.</p></div></li>
+        </ul>
+        <div class="feature-cta reveal">
+          <a class="btn btn-primary btn-lg" href="app/">Open the app <span data-icon="arrow"></span></a>
+          <small>Works on any Android or iPhone. Add it to your home screen.</small>
+        </div>
+      </div>
+      <div class="phone-wrap reveal" style="--d:.1s" aria-hidden="true">
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="ps-top"><div><small>Good evening</small><b>Hi, Sarah</b></div><span class="ps-avatar">S</span></div>
+            <div class="ps-count"><small>UCE · BRIAN, S4</small><b>47 days</b><span>until the national exam</span></div>
+            <div class="ps-next">
+              <small>Next session · Today 5:00 PM</small>
+              <div class="ps-next-row"><img src="https://i.pravatar.cc/120?img=45" alt="" /><div><b>Maths with Grace</b><small>1 hour · At your home</small></div></div>
+              <span class="ps-join">Details</span>
+            </div>
+            <div class="ps-stats"><div><b>14</b><small>sessions</small></div><div><b>16h</b><small>coached</small></div><div><b>560k</b><small>UGX spent</small></div></div>
+            <div class="ps-tab"><i class="on"></i><i></i><i></i><i></i><i></i></div>
+          </div>
+        </div>
+        <div class="phone-blob"></div>
+      </div>
+    </section>
+
+    <!-- ============ TEACHERS ============ -->
+    <section class="section tutors">
+      <div class="container">
+        <div class="section-head">
+          <h2 class="reveal">Teachers families<br />keep booking</h2>
+          <div class="scroll-btns">
+            <button type="button" class="round-btn" data-scroll="-1" aria-label="Scroll left"><span data-icon="back"></span></button>
+            <button type="button" class="round-btn" data-scroll="1" aria-label="Scroll right"><span data-icon="chevron"></span></button>
+          </div>
+        </div>
+      </div>
+      <div class="tutor-rail" id="tutorRail"></div>
+    </section>
+
+    <!-- ============ TESTIMONIALS ============ -->
+    <section class="section container">
+      <div class="section-head">
+        <h2 class="reveal">What parents say</h2>
+      </div>
+      <div class="quotes">
+        <figure class="quote tint-sky reveal">
+          <blockquote>“My daughter moved from aggregate 12 to aggregate 7 in two terms. The teacher was never once late.”</blockquote>
+          <figcaption><span class="initial">S</span><div><b>Specioza</b><small>Parent · P7 · Kawempe</small></div></figcaption>
+        </figure>
+        <figure class="quote tint-gold reveal" style="--d:.08s">
+          <blockquote>“I used to send school fees and just hope. Now I get a note after every session saying exactly what was covered.”</blockquote>
+          <figcaption><span class="initial">R</span><div><b>Robert</b><small>Parent · S4 · Wakiso</small></div></figcaption>
+        </figure>
+        <figure class="quote tint-mint reveal" style="--d:.16s">
+          <blockquote>“Paying with MoMo session by session meant I could start small and see if it worked before committing.”</blockquote>
+          <figcaption><span class="initial">B</span><div><b>Betty</b><small>Parent · S2 · Nakawa</small></div></figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- ============ GUARANTEE ============ -->
+    <section class="container">
+      <div class="guarantee reveal">
+        <span class="guarantee-badge" data-icon="shield"></span>
+        <div>
+          <h2>Teacher did not turn up? Full refund.</h2>
+          <p>Your payment is held until the session is confirmed done. If it does not happen, the money goes straight back to your Mobile Money.</p>
+        </div>
+        <a class="btn btn-dark btn-lg" href="app/#/search">Find a teacher</a>
+      </div>
+    </section>
+
+    <!-- ============ TEACH ============ -->
+    <section class="section teach" id="teach">
+      <div class="container teach-grid">
+        <div>
+          <p class="eyebrow eyebrow--light reveal"><span class="dot"></span> For teachers</p>
+          <h2 class="reveal">Teach after school.<br />Get paid every Friday.</h2>
+          <ul class="teach-list">
+            <li class="reveal"><span data-icon="wallet"></span> Paid straight to your MoMo, every week, automatically</li>
+            <li class="reveal"><span data-icon="users"></span> Students found for you — no printing posters, no chasing parents</li>
+            <li class="reveal"><span data-icon="clock"></span> You set the hours, the areas you travel to, and your rate</li>
+            <li class="reveal"><span data-icon="badge"></span> UNEB examiners and experienced teachers earn the most</li>
+          </ul>
+          <a class="btn btn-primary btn-lg reveal" href="#teach" data-soon="Teacher applications">Apply to teach <span data-icon="arrow"></span></a>
+        </div>
+        <div class="teach-collage" aria-hidden="true">
+          <img class="tc1" src="https://i.pravatar.cc/400?img=51" alt="" />
+          <img class="tc2" src="https://i.pravatar.cc/400?img=32" alt="" />
+          <img class="tc3" src="https://i.pravatar.cc/400?img=59" alt="" />
+          <div class="teach-earn"><small>Paid this week</small><b>420,000</b><span>UGX · 14 sessions</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ FAQ ============ -->
+    <section class="section container faq-wrap">
+      <h2 class="reveal">Questions parents ask</h2>
+      <div class="faq">
+        <details class="reveal" open>
+          <summary>How much does a session cost?</summary>
+          <p>Teachers set their own rate, mostly between UGX 18,000 and UGX 40,000 an hour depending on the level and their experience. A-Level sciences cost more than primary. If the teacher travels to your home there is a small travel fee on top, which the teacher keeps.</p>
+        </details>
+        <details class="reveal">
+          <summary>Does the teacher come to my home?</summary>
+          <p>Most do, within the areas they list on their profile. You can also send your child to the teacher, or book an online session over WhatsApp or video if travel is difficult.</p>
+        </details>
+        <details class="reveal">
+          <summary>How do I know the teacher is genuine?</summary>
+          <p>Every teacher has their national ID checked against their profile, their teaching qualification seen and recorded, and two referees contacted before they can take a single booking. Ratings only come from families who actually paid for a session.</p>
+        </details>
+        <details class="reveal">
+          <summary>How many sessions does my child need?</summary>
+          <p>Most families start with two a week and increase in the final term before the exam. You book session by session, so you can change your mind at any point.</p>
+        </details>
+        <details class="reveal">
+          <summary>What if I need to cancel?</summary>
+          <p>Cancel free up to 12 hours before and the money returns to your Mobile Money. Inside 12 hours the teacher keeps half, since they have already turned down other work.</p>
+        </details>
+        <details class="reveal">
+          <summary>Do you cover my area?</summary>
+          <p>Right now Kampala, Wakiso, Kira, Entebbe and Mukono. We are adding areas as more teachers join, so check the app for the latest.</p>
+        </details>
+      </div>
+    </section>
+
+    <!-- ============ FINAL CTA ============ -->
+    <section class="final container">
+      <h2 class="reveal">The exam date is not<br />going to move.</h2>
+      <a class="btn btn-primary btn-xl reveal" href="app/#/onboarding">Find a teacher — free to browse</a>
+    </section>
+  </main>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <a class="logo logo--light" href="./"><span class="logo-mark" data-logo></span><span>cranoly</span></a>
+          <p>Vetted teachers for PLE, UCE and UACE. At your home, or online.</p>
+          <div class="footer-selects">
+            <button type="button" data-soon="Language"><span data-icon="globe"></span> English</button>
+            <button type="button" data-soon="Currency">UGX</button>
+          </div>
+        </div>
+        <div class="footer-cols">
+          <div><h4>Find a teacher</h4><a href="app/#/search?subject=maths">Mathematics</a><a href="app/#/search?subject=physics">Physics</a><a href="app/#/search?subject=chemistry">Chemistry</a><a href="app/#/search?subject=biology">Biology</a><a href="app/#/search">All subjects</a></div>
+          <div><h4>Exams</h4><a href="app/#/search">PLE coaching</a><a href="app/#/search">UCE coaching</a><a href="app/#/search">UACE coaching</a><a href="#" data-soon="Holiday coaching">Holiday coaching</a></div>
+          <div><h4>Teachers</h4><a href="#teach">Teach with us</a><a href="#teach" data-soon="Teacher guide">Teacher guide</a><a href="#teach" data-soon="Payouts">How payouts work</a></div>
+          <div><h4>Company</h4><a href="#safety">Safety</a><a href="#" data-soon="About">About us</a><a href="#" data-soon="Contact">Contact</a><a href="#" data-soon="Terms">Terms</a><a href="#" data-soon="Privacy">Privacy</a></div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© <span id="year"></span> Cranoly. All rights reserved.</span>
+        <a class="app-pill" href="app/"><span data-icon="download"></span> Get the app</a>
+      </div>
+    </div>
+  </footer>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="landing.js"></script>
+</body>
+</html>

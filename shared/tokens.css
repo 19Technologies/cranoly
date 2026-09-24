@@ -1,0 +1,62 @@
+/* ------------------------------------------------------------------
+   Design tokens — shared by the landing page and the app.
+   Rebrand here: colours, fonts and corner radii all come from this file.
+------------------------------------------------------------------- */
+:root {
+  /* Brand */
+  --brand: #0C7A4D;          /* main accent (buttons, highlights) */
+  --brand-ink: #FFFFFF;      /* text colour on top of --brand */
+  --brand-soft: #D8EFE3;
+  --brand-deep: #08603C;
+
+  /* Supporting tints */
+  --gold: #F5B723;           /* achievement, exam countdown, top tutors */
+  --gold-soft: #FDF0CC;
+  --sun: #F5B723;            /* alias, kept so older rules keep working */
+  --sun-soft: #FDF0CC;
+  --mint: #C8EBD8;
+  --sky: #CFE0F5;
+  --lilac: #DFDCF5;
+  --peach: #F8DECB;
+
+  /* Neutrals */
+  --ink: #15181B;
+  --ink-2: #4A5158;
+  --ink-3: #868E96;
+  --line: #E4E6E2;
+  --line-strong: #CFD3CD;
+  --paper: #FBFAF6;
+  --paper-2: #F2F1EA;
+  --card: #FFFFFF;
+
+  /* Status */
+  --ok: #17864F;
+  --ok-soft: #DCF0E4;
+  --danger: #C7382F;
+  --pending: #B8791A;        /* mobile money "waiting for PIN" */
+
+  /* Type */
+  --font-display: 'Bricolage Grotesque', ui-sans-serif, system-ui, sans-serif;
+  --font-body: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+
+  /* Shape */
+  --r-sm: 10px;
+  --r: 16px;
+  --r-lg: 22px;
+  --r-xl: 30px;
+
+  /* Depth — softer than a pure offset shadow; this product is less playful */
+  --pop: 0 3px 0 var(--ink);
+  --pop-sm: 0 2px 0 var(--ink);
+  --soft: 0 18px 40px -18px rgba(21, 24, 27, .3);
+
+  --ease: cubic-bezier(.2, .8, .2, 1);
+}
+
+.tint-gold  { background: var(--gold); }
+.tint-sun   { background: var(--gold); }
+.tint-mint  { background: var(--mint); }
+.tint-sky   { background: var(--sky); }
+.tint-lilac { background: var(--lilac); }
+.tint-peach { background: var(--peach); }
+.tint-brand { background: var(--brand); color: #fff; }
