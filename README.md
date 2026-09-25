@@ -34,7 +34,7 @@ duration, Mobile Money checkout, sessions list with reschedule and cancel, video
 online sessions, messaging, profile.
 
 **Landing page** — hero search, how it works, vetting, Mobile Money, teacher carousel,
-parent testimonials, teacher recruitment, FAQ.
+parent testimonials, FAQ. Parent-facing only; teacher recruitment lives elsewhere.
 
 State is saved in `localStorage`, so each device has its own data.
 
@@ -71,6 +71,10 @@ python3 -m http.server 8000
   named safeguarding contact and a working report route.
 - **Prices are guesses.** The rates in `shared/data.js` are unverified placeholders.
   Check real market rates before pricing anything.
+- **No photos.** Teacher portraits are initials on a coloured tile, generated inline by
+  `photo()` in `shared/data.js`. Stock-photo services could not supply Ugandan faces, and
+  putting a real identifiable person under a fabricated "UNEB examiner" claim would be
+  misrepresentation. Swap in real teacher photos by changing that one function.
 - **Data protection.** Uganda's Data Protection and Privacy Act 2019 applies once you
   hold student records. Worth reading before launch.
 

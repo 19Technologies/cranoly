@@ -12,8 +12,42 @@ export const BRAND = {
   currency: 'UGX',
 };
 
-// Placeholder headshots. Swap for real tutor photos (any image URL works).
-export const photo = (img, size = 300) => `https://i.pravatar.cc/${size}?img=${img}`;
+function hash(str) {
+  let h = 1779033703 ^ str.length;
+  for (let i = 0; i < str.length; i++) {
+    h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
+    h = (h << 13) | (h >>> 19);
+  }
+  return h >>> 0;
+}
+
+// ------------------------------------------------------------------
+// Placeholder portraits.
+//
+// These are initials on a coloured tile, generated inline — NOT photos.
+// That is deliberate: stock-photo services could not supply Ugandan
+// faces, and putting a real identifiable person under a fabricated
+// "UNEB examiner, 11 years teaching" claim would be misrepresentation.
+//
+// When you have real teachers, replace the body of this function with
+// a URL and everything updates: the cards, profiles, messages and rail.
+//   export const photo = (t, size = 300) => t.photoUrl;
+// ------------------------------------------------------------------
+const FACE_TINTS = ['#C8EBD8', '#CFE0F5', '#FDF0CC', '#F8DECB', '#DFDCF5', '#D8EFE3'];
+
+export const initialsOf = (name) =>
+  name.split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
+
+export const photo = (t, size = 300) => {
+  const txt = initialsOf(t.name);
+  const tint = FACE_TINTS[hash(t.id) % FACE_TINTS.length];
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">`
+    + `<rect width="100" height="100" fill="${tint}"/>`
+    + `<text x="50" y="52" text-anchor="middle" dominant-baseline="central" `
+    + `font-family="ui-sans-serif,system-ui,-apple-system,Segoe UI,Helvetica,Arial,sans-serif" `
+    + `font-size="30" font-weight="700" letter-spacing="-1" fill="#15181B">${txt}</text></svg>`;
+  return 'data:image/svg+xml,' + encodeURIComponent(svg);
+};
 
 // UGX formatting: 25000 -> "25,000"
 export const ugx = (n) => n.toLocaleString('en-UG');
@@ -93,7 +127,7 @@ export const GOALS = [
 // `examiner` = has marked for UNEB — the credential parents ask about first.
 export const TUTORS = [
   {
-    id: 'grace-nakimuli', name: 'Grace Nakimuli', img: 45, gender: 'f',
+    id: 'grace-nakimuli', name: 'Grace Nakimuli', gender: 'f',
     subjects: ['maths', 'physics'], stages: ['olevel', 'alevel'],
     area: 'nakawa', travels: ['nakawa', 'central', 'kira'],
     modes: ['home', 'tutor', 'video'],
@@ -105,7 +139,7 @@ export const TUTORS = [
     schoolNote: 'Teaches at a secondary school in Nakawa',
   },
   {
-    id: 'julius-okello', name: 'Julius Okello', img: 51, gender: 'm',
+    id: 'julius-okello', name: 'Julius Okello', gender: 'm',
     subjects: ['chemistry', 'biology'], stages: ['olevel', 'alevel'],
     area: 'wakiso', travels: ['wakiso', 'kira', 'nakawa'],
     modes: ['home', 'tutor', 'whatsapp'],
@@ -117,7 +151,7 @@ export const TUTORS = [
     schoolNote: 'Teaches at a secondary school in Wakiso',
   },
   {
-    id: 'sarah-ainembabazi', name: 'Sarah Ainembabazi', img: 32, gender: 'f',
+    id: 'sarah-ainembabazi', name: 'Sarah Ainembabazi', gender: 'f',
     subjects: ['english', 'sst'], stages: ['primary'],
     area: 'rubaga', travels: ['rubaga', 'central', 'makindye'],
     modes: ['home', 'tutor'],
@@ -129,7 +163,7 @@ export const TUTORS = [
     schoolNote: 'Teaches at a primary school in Rubaga',
   },
   {
-    id: 'david-ssempala', name: 'David Ssempala', img: 60, gender: 'm',
+    id: 'david-ssempala', name: 'David Ssempala', gender: 'm',
     subjects: ['maths', 'science'], stages: ['primary'],
     area: 'kawempe', travels: ['kawempe', 'central'],
     modes: ['home', 'tutor', 'whatsapp'],
@@ -141,7 +175,7 @@ export const TUTORS = [
     schoolNote: 'Teaches at a primary school in Kawempe',
   },
   {
-    id: 'patience-atuhaire', name: 'Patience Atuhaire', img: 44, gender: 'f',
+    id: 'patience-atuhaire', name: 'Patience Atuhaire', gender: 'f',
     subjects: ['biology', 'chemistry'], stages: ['alevel'],
     area: 'central', travels: ['central', 'nakawa', 'makindye'],
     modes: ['home', 'video'],
@@ -153,7 +187,7 @@ export const TUTORS = [
     schoolNote: 'Teaches at a secondary school in Kampala Central',
   },
   {
-    id: 'moses-waiswa', name: 'Moses Waiswa', img: 53, gender: 'm',
+    id: 'moses-waiswa', name: 'Moses Waiswa', gender: 'm',
     subjects: ['maths', 'ict'], stages: ['olevel', 'alevel'],
     area: 'kira', travels: ['kira', 'nakawa', 'mukono'],
     modes: ['home', 'tutor', 'video', 'whatsapp'],
@@ -165,7 +199,7 @@ export const TUTORS = [
     schoolNote: 'Software developer, teaches evenings and weekends',
   },
   {
-    id: 'rebecca-nabirye', name: 'Rebecca Nabirye', img: 16, gender: 'f',
+    id: 'rebecca-nabirye', name: 'Rebecca Nabirye', gender: 'f',
     subjects: ['english', 'luganda'], stages: ['primary', 'olevel'],
     area: 'makindye', travels: ['makindye', 'central', 'rubaga'],
     modes: ['home', 'tutor', 'whatsapp'],
@@ -177,7 +211,7 @@ export const TUTORS = [
     schoolNote: 'Teaches at a primary school in Makindye',
   },
   {
-    id: 'ronald-byaruhanga', name: 'Ronald Byaruhanga', img: 12, gender: 'm',
+    id: 'ronald-byaruhanga', name: 'Ronald Byaruhanga', gender: 'm',
     subjects: ['physics', 'maths'], stages: ['olevel'],
     area: 'mukono', travels: ['mukono', 'kira'],
     modes: ['tutor', 'whatsapp'],
@@ -189,7 +223,7 @@ export const TUTORS = [
     schoolNote: 'Teaches at a secondary school in Mukono',
   },
   {
-    id: 'esther-namuli', name: 'Esther Namuli', img: 35, gender: 'f',
+    id: 'esther-namuli', name: 'Esther Namuli', gender: 'f',
     subjects: ['maths', 'english', 'science'], stages: ['primary'],
     area: 'entebbe', travels: ['entebbe', 'wakiso'],
     modes: ['home', 'tutor'],
@@ -201,7 +235,7 @@ export const TUTORS = [
     schoolNote: 'Teaches at a primary school in Entebbe',
   },
   {
-    id: 'ibrahim-kaggwa', name: 'Ibrahim Kaggwa', img: 59, gender: 'm',
+    id: 'ibrahim-kaggwa', name: 'Ibrahim Kaggwa', gender: 'm',
     subjects: ['geography', 'history'], stages: ['olevel', 'alevel'],
     area: 'central', travels: ['central', 'kawempe', 'rubaga'],
     modes: ['home', 'tutor', 'whatsapp'],
@@ -213,7 +247,7 @@ export const TUTORS = [
     schoolNote: 'Teaches at a secondary school in Kampala Central',
   },
   {
-    id: 'joan-akello', name: 'Joan Akello', img: 47, gender: 'f',
+    id: 'joan-akello', name: 'Joan Akello', gender: 'f',
     subjects: ['kiswahili', 'english'], stages: ['primary', 'olevel'],
     area: 'nakawa', travels: ['nakawa', 'kira', 'central'],
     modes: ['home', 'whatsapp', 'video'],
@@ -225,7 +259,7 @@ export const TUTORS = [
     schoolNote: 'Teaches at a secondary school in Nakawa',
   },
   {
-    id: 'samuel-mugisha', name: 'Samuel Mugisha', img: 13, gender: 'm',
+    id: 'samuel-mugisha', name: 'Samuel Mugisha', gender: 'm',
     subjects: ['chemistry', 'maths'], stages: ['alevel'],
     area: 'wakiso', travels: ['wakiso', 'rubaga', 'central'],
     modes: ['home', 'tutor', 'video'],
@@ -252,14 +286,6 @@ export const priceFor = (tutor, hours, mode) => {
 export const daysTo = (iso) => Math.max(0, Math.ceil((new Date(iso + 'T00:00:00') - Date.now()) / 864e5));
 
 // ---- Deterministic "random" helpers so demo data looks stable ----
-function hash(str) {
-  let h = 1779033703 ^ str.length;
-  for (let i = 0; i < str.length; i++) {
-    h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
-    h = (h << 13) | (h >>> 19);
-  }
-  return h >>> 0;
-}
 export function seeded(seed) {
   let a = hash(String(seed));
   return () => {

@@ -18,14 +18,14 @@ $('#heroSearch').addEventListener('submit', (e) => {
   location.href = `app/#/search?subject=${subjectSel.value}`;
 });
 
-$('#avatarStack').innerHTML = TUTORS.slice(0, 5).map((t) => `<img src="${photo(t.img, 96)}" alt="" loading="lazy" />`).join('');
+$('#avatarStack').innerHTML = TUTORS.slice(0, 5).map((t) => `<img src="${photo(t, 96)}" alt="" loading="lazy" />`).join('');
 
 // ---- Teacher rail ----
 const featured = TUTORS.filter((t) => t.examiner).concat(TUTORS.filter((t) => !t.examiner)).slice(0, 10);
 $('#tutorRail').innerHTML = featured.map((t) => `
   <a class="t-card" href="app/#/tutor/${t.id}">
     <div class="t-photo">
-      <img src="${photo(t.img, 400)}" alt="${t.name}" loading="lazy" />
+      <img src="${photo(t, 400)}" alt="${t.name}" loading="lazy" />
       ${t.examiner ? `<span class="t-badge">${icon('badge', 13)} UNEB examiner</span>` : ''}
     </div>
     <div class="t-body">

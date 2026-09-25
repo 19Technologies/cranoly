@@ -194,7 +194,7 @@ function tutorCard(t, i = 0) {
   const stages = t.stages.map((s) => stageById(s).name).join(' · ');
   return `<article class="tcard" style="animation-delay:${Math.min(i, 6) * 40}ms">
     <a class="tcard-main" href="#/tutor/${t.id}">
-      <div class="tcard-photo"><img src="${photo(t.img, 200)}" alt="" loading="lazy" />${online(t) ? '<span class="online" title="Online now"></span>' : ''}</div>
+      <div class="tcard-photo"><img src="${photo(t, 200)}" alt="" loading="lazy" />${online(t) ? '<span class="online" title="Online now"></span>' : ''}</div>
       <div>
         <div class="tcard-name">${t.name}${t.top ? `<span class="badge-top">${icon('sparkle', 12)} Top</span>` : ''}</div>
         <div class="tcard-sub">${icon('book', 15)} ${subs}</div>
@@ -218,11 +218,11 @@ function tutorCard(t, i = 0) {
 }
 
 const miniCard = (t) => `<a class="mini" href="#/tutor/${t.id}">
-  <div class="ph"><img src="${photo(t.img, 300)}" alt="" loading="lazy" />${t.examiner ? `<span class="badge-top">${icon('badge', 12)} Examiner</span>` : ''}</div>
+  <div class="ph"><img src="${photo(t, 300)}" alt="" loading="lazy" />${t.examiner ? `<span class="badge-top">${icon('badge', 12)} Examiner</span>` : ''}</div>
   <div class="bd"><b>${t.name}</b><div class="ln"><span class="r">${icon('star', 13)}${t.rating.toFixed(1)}</span><span>${ugx(t.rate)}/hr</span></div></div>
 </a>`;
 
-const tutorMini = (t, sub) => `<div class="tutor-mini"><img src="${photo(t.img, 160)}" alt="" /><div><b>${t.name}</b><small>${sub ?? `${icon('star')} ${t.rating.toFixed(1)} · ${t.subjects.map((s) => subjectById(s).name).join(', ')}`}</small></div></div>`;
+const tutorMini = (t, sub) => `<div class="tutor-mini"><img src="${photo(t, 160)}" alt="" /><div><b>${t.name}</b><small>${sub ?? `${icon('star')} ${t.rating.toFixed(1)} · ${t.subjects.map((s) => subjectById(s).name).join(', ')}`}</small></div></div>`;
 
 function scheduleHtml(t, key, selected, prefix) {
   const slots = openSlots(t, key);
@@ -271,13 +271,13 @@ const waLink = (t, text) => `https://wa.me/?text=${encodeURIComponent(text || `H
 
 // ================= Screens =================
 function Welcome() {
-  const faces = [[45, '8%', '8%', 112], [51, '58%', '4%', 94], [32, '55%', '44%', 120], [60, '10%', '54%', 90], [44, '32%', '26%', 100]];
+  const faces = TUTORS.slice(0, 5).map((t, i) => [t, ...[['8%', '8%', 112], ['58%', '4%', 94], ['55%', '44%', 120], ['10%', '54%', 90], ['32%', '26%', 100]][i]]);
   const words = [['PLE', '30%', '5%'], ['UCE', '2%', '38%'], ['UACE', '33%', '74%']];
   return {
     mode: 'bare',
     html: `<section class="welcome">
       <div class="welcome-art" aria-hidden="true">
-        ${faces.map(([img, l, tp, s], i) => `<div class="ring" style="left:${l};top:${tp};width:${s}px;height:${s}px;animation-delay:${i * 80}ms,${i * 0.7}s"><img src="${photo(img, 300)}" alt="" /></div>`).join('')}
+        ${faces.map(([t, l, tp, s], i) => `<div class="ring" style="left:${l};top:${tp};width:${s}px;height:${s}px;animation-delay:${i * 80}ms,${i * 0.7}s"><img src="${photo(t, 300)}" alt="" /></div>`).join('')}
         ${words.map(([w, l, tp], i) => `<span class="word" style="left:${l};top:${tp};animation-delay:${300 + i * 120}ms,${i}s">${w}</span>`).join('')}
       </div>
       <div class="welcome-copy">
@@ -377,7 +377,7 @@ function Home() {
     const m = modeById(next.mode);
     return `<div class="next">
       <div class="next-top"><span>Next session · ${isToday(d) ? 'Today' : fmtDay(d)}, ${fmtTime(d)}</span><span class="countdown" data-until="${next.start}">${until(d)}</span></div>
-      <div class="next-row"><img src="${photo(t.img, 160)}" alt="" /><div><b>${subjectById(t.subjects[0]).name} with ${firstName(t.name)}</b><small>${plural(next.hours, 'hour')} · ${m.name}</small></div></div>
+      <div class="next-row"><img src="${photo(t, 160)}" alt="" /><div><b>${subjectById(t.subjects[0]).name} with ${firstName(t.name)}</b><small>${plural(next.hours, 'hour')} · ${m.name}</small></div></div>
       <div class="next-actions">${sessionCta(next, t, 'btn-primary')}<a class="btn btn-outline" href="#/sessions">All sessions</a></div>
     </div>`;
   })() : `<div class="first"><h2>Book the first session</h2><p>Teachers near ${areaById(state.area).name} from ${money(18000)} an hour. Most families start with two sessions a week.</p><a class="btn btn-dark" href="#/search">Find a teacher ${icon('arrow', 20)}</a></div>`;
@@ -410,7 +410,7 @@ function Home() {
       </section>
 
       ${mine.length ? `<section class="sec"><div class="sec-head"><h2>Your teachers</h2></div><div class="row-list">${mine.map((t) => `<div class="row">
-          <img src="${photo(t.img, 120)}" alt="" /><a class="grow" href="#/tutor/${t.id}"><b>${t.name}</b><small>${subjectById(t.subjects[0]).name} · ${plural(state.bookings.filter((b) => b.tutorId === t.id && b.status === 'done').length, 'session')} together</small></a>
+          <img src="${photo(t, 120)}" alt="" /><a class="grow" href="#/tutor/${t.id}"><b>${t.name}</b><small>${subjectById(t.subjects[0]).name} · ${plural(state.bookings.filter((b) => b.tutorId === t.id && b.status === 'done').length, 'session')} together</small></a>
           <a class="btn btn-outline btn-sm" href="#/book/${t.id}">Book</a></div>`).join('')}</div></section>` : ''}
 
       <section class="sec"><div class="sec-head"><h2>Teachers near you</h2><a href="#/search">See all</a></div>
@@ -517,7 +517,7 @@ function Tutor(r) {
     mode: 'no-tabs',
     html: `<div class="p-hero">
         <div class="video-cover">
-          <img src="${photo(t.img, 600)}" alt="${t.name}" />
+          <img src="${photo(t, 600)}" alt="${t.name}" />
           <div class="cover-tags">${trustRow(t)}</div>
         </div>
         <div class="topbar topbar--float">
@@ -783,7 +783,7 @@ function Sessions(r) {
     return `<article class="lesson ${isPast ? 'past' : ''}">
       <div class="datebox"><small>${s.toLocaleDateString('en-GB', { month: 'short' })}</small><b>${s.getDate()}</b><span>${s.toLocaleDateString('en-GB', { weekday: 'short' })}</span></div>
       <div class="grow">
-        <div class="lesson-top"><img src="${photo(t.img, 80)}" alt="" /><b>${subjectById(t.subjects[0]).name} · ${firstName(t.name)}</b></div>
+        <div class="lesson-top"><img src="${photo(t, 80)}" alt="" /><b>${subjectById(t.subjects[0]).name} · ${firstName(t.name)}</b></div>
         <div class="lesson-time">${icon('clock', 15)} ${fmtTime(s)} – ${fmtTime(e)}${!isPast ? ` · ${until(s)}` : ''}${isPast && b.rating ? ` <span class="mini-stars">${stars(b.rating)}</span>` : ''}</div>
         <div class="lesson-time">${icon(m.icon, 15)} ${m.name}${b.price ? ` · ${money(b.price)}` : ''}</div>
         <div class="lesson-actions">${actions}</div>
@@ -823,8 +823,8 @@ function Room(r) {
         <span class="live-pill">LIVE</span>
       </header>
       <div class="stage">
-        <img class="bg" src="${photo(t.img, 300)}" alt="" />
-        <div class="face-wrap"><img class="face" src="${photo(t.img, 600)}" alt="${t.name}" /></div>
+        <img class="bg" src="${photo(t, 300)}" alt="" />
+        <div class="face-wrap"><img class="face" src="${photo(t, 600)}" alt="${t.name}" /></div>
         <span class="name-tag">${icon('mic', 15)} ${firstName(t.name)}</span>
         <div class="self" id="self"></div>
       </div>
@@ -874,7 +874,7 @@ function Messages() {
     tab: 'messages',
     html: `<header class="page-head"><h1>Messages</h1></header>
       ${list.length ? list.map(({ t, th, last }) => `<a class="thread ${th.unread ? 'unread' : ''}" href="#/chat/${t.id}">
-          <div class="ph"><img src="${photo(t.img, 120)}" alt="" />${online(t) ? '<span class="online"></span>' : ''}</div>
+          <div class="ph"><img src="${photo(t, 120)}" alt="" />${online(t) ? '<span class="online"></span>' : ''}</div>
           <div class="grow"><div class="top"><b>${t.name}</b><time>${ago(last.ts)}</time></div>
           <p><span style="overflow:hidden;text-overflow:ellipsis">${last.from === 'me' ? 'You: ' : ''}${esc(last.text)}</span>${th.unread ? '<i class="unread-dot"></i>' : ''}</p></div>
         </a>`).join('')
@@ -898,7 +898,7 @@ function Chat(r) {
       <header class="chat-head">
         <button class="icon-btn" data-act="back" data-fallback="#/messages" aria-label="Back">${icon('back')}</button>
         <a href="#/tutor/${t.id}" style="display:flex;gap:10px;align-items:center;flex:1;min-width:0">
-          <img src="${photo(t.img, 120)}" alt="" /><div class="grow"><b>${t.name}</b><small>${online(t) ? 'Online now' : 'Usually replies within a few hours'}</small></div>
+          <img src="${photo(t, 120)}" alt="" /><div class="grow"><b>${t.name}</b><small>${online(t) ? 'Online now' : 'Usually replies within a few hours'}</small></div>
         </a>
         <a class="btn btn-primary btn-sm" href="#/book/${t.id}">Book</a>
       </header>
