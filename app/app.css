@@ -397,13 +397,11 @@ p { margin: 0; }
 .class-top b { display: block; font-size: 16px; }
 .class-top small { color: rgba(255,255,255,.6); font-size: 13px; font-variant-numeric: tabular-nums; }
 .live-pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px; background: rgba(229,56,59,.18); color: #FF8A8C; font-size: 12px; font-weight: 750; }
-.live-pill::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--danger); animation: blink 1.4s infinite; }
-@keyframes blink { 50% { opacity: .3; } }
+.live-pill::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--danger); }
 .stage { flex: 1; position: relative; margin: 0 12px; border-radius: 26px; overflow: hidden; background: #1c1a21; }
 .stage .bg { position: absolute; inset: -30px; width: calc(100% + 60px); height: calc(100% + 60px); object-fit: cover; filter: blur(28px) brightness(.55); }
 .stage .face-wrap { position: absolute; inset: 0; display: grid; place-items: center; }
-.stage .face { width: 60%; max-width: 260px; aspect-ratio: 1; border-radius: 50%; object-fit: cover; border: 3px solid rgba(255,255,255,.9); animation: talk 2.6s ease-in-out infinite; }
-@keyframes talk { 0%, 100% { box-shadow: 0 0 0 0 rgba(255,91,58,.6); } 40% { box-shadow: 0 0 0 16px rgba(255,91,58,0); } }
+.stage .face { width: 60%; max-width: 260px; aspect-ratio: 1; border-radius: 50%; object-fit: cover; border: 3px solid rgba(255,255,255,.9); }
 .name-tag { position: absolute; left: 12px; bottom: 12px; display: flex; align-items: center; gap: 6px; background: rgba(0,0,0,.5); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 650; }
 .name-tag .ic { width: 15px; height: 15px; }
 .self { position: absolute; right: 12px; top: 12px; width: 104px; aspect-ratio: 3 / 4; border-radius: 18px; overflow: hidden; background: #2b2833; border: 2px solid rgba(255,255,255,.85); display: grid; place-items: center; box-shadow: 0 10px 30px rgba(0,0,0,.4); }

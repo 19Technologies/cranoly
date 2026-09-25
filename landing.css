@@ -152,7 +152,6 @@ h2 { font-size: clamp(34px, 4.6vw, 60px); }
 @keyframes rise { from { opacity: 0; transform: translateY(40px) scale(.96); } }
 @keyframes pop { from { opacity: 0; transform: translateY(16px) scale(.9); } }
 @keyframes bob { 50% { translate: 0 -8px; } }
-@keyframes ping { 0% { box-shadow: 0 0 0 0 rgba(31,157,85,.6); } 70%, 100% { box-shadow: 0 0 0 10px rgba(31,157,85,0); } }
 
 /* ================= Marquee ================= */
 .marquee-wrap { overflow: hidden; padding: 16px 0; }
@@ -202,7 +201,7 @@ h2 { font-size: clamp(34px, 4.6vw, 60px); }
 .streak { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
 .streak i { width: 26px; height: 26px; border-radius: 8px; background: rgba(255,255,255,.12); }
 .streak i.on { background: var(--mint); }
-.streak i.today { background: var(--brand); box-shadow: 0 0 0 3px rgba(255,91,58,.35); }
+.streak i.today { background: var(--brand); }
 .streak > span { flex-basis: 100%; margin-top: 12px; display: flex; gap: 6px; align-items: center; font-weight: 650; }
 .streak .ic { color: var(--brand); }
 
