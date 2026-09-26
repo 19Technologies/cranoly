@@ -1,4 +1,4 @@
-# Cranoly
+# Somero
 
 A marketplace for **exam coaching in Uganda** — PLE, UCE and UACE. Parents find a vetted
 teacher, book by the session, and pay with Mobile Money. The teacher comes to the home,
@@ -43,7 +43,7 @@ State is saved in `localStorage`, so each device has its own data.
 ES modules do not load from `file://`, so serve the folder:
 
 ```bash
-cd cranoly
+cd somero
 python3 -m http.server 8000
 # http://localhost:8000        landing
 # http://localhost:8000/app/   app
@@ -53,7 +53,7 @@ python3 -m http.server 8000
 
 | What | Where |
 | --- | --- |
-| Name | Find and replace `Cranoly` / `cranoly` |
+| Name | Find and replace `Somero` / `somero` |
 | Colours, fonts, radii | `shared/tokens.css` |
 | Logo | `logoMark()` in `shared/icons.js`, plus `app/icons/` |
 | Subjects, classes, areas, teachers, prices | `shared/data.js` |

@@ -8,7 +8,7 @@
 // ------------------------------------------------------------------
 
 export const BRAND = {
-  name: 'Cranoly',
+  name: 'Somero',
   currency: 'UGX',
 };
 

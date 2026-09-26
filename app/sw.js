@@ -1,7 +1,7 @@
 // Service worker: makes the app installable and usable offline.
 // App files are fetched network-first, so your edits show up immediately;
 // photos are cached after the first load.
-const CACHE = 'cranoly-v1';
+const CACHE = 'somero-v1';
 const SHELL = [
   './', 'index.html', 'app.css', 'app.js', 'manifest.webmanifest', 'icons/icon.svg', 'icons/icon-192.png',
   '../shared/tokens.css', '../shared/data.js', '../shared/icons.js',

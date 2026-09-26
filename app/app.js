@@ -66,7 +66,7 @@ const BUCKETS = [
 const bucket = (s) => { const h = +s.slice(0, 2); return h < 12 ? 'morning' : h < 17 ? 'afternoon' : 'evening'; };
 
 // ================= State (saved on this device) =================
-const KEY = 'cranoly-state-v1';
+const KEY = 'somero-state-v1';
 const blank = () => ({
   onboarded: false, name: '', forChild: true, learnerName: '', klass: 'S4',
   subjects: ['maths'], area: 'nakawa', goal: 'exam',
@@ -254,10 +254,10 @@ function downloadIcs(b) {
   const e = new Date(s.getTime() + b.hours * 3600e3);
   const f = (d) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
   const body = [
-    'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Cranoly//Demo//EN', 'BEGIN:VEVENT',
-    `UID:${b.id}@cranoly.demo`, `DTSTAMP:${f(new Date())}`, `DTSTART:${f(s)}`, `DTEND:${f(e)}`,
+    'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Somero//Demo//EN', 'BEGIN:VEVENT',
+    `UID:${b.id}@somero.demo`, `DTSTAMP:${f(new Date())}`, `DTSTART:${f(s)}`, `DTEND:${f(e)}`,
     `SUMMARY:${t.subjects.map((x) => subjectById(x).name)[0]} with ${t.name}`,
-    `LOCATION:${modeById(b.mode).name}`, 'DESCRIPTION:Booked through Cranoly.',
+    `LOCATION:${modeById(b.mode).name}`, 'DESCRIPTION:Booked through Somero.',
     'END:VEVENT', 'END:VCALENDAR',
   ].join('\r\n');
   const a = document.createElement('a');
@@ -267,7 +267,7 @@ function downloadIcs(b) {
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
-const waLink = (t, text) => `https://wa.me/?text=${encodeURIComponent(text || `Hello ${firstName(t.name)}, this is about our Cranoly session.`)}`;
+const waLink = (t, text) => `https://wa.me/?text=${encodeURIComponent(text || `Hello ${firstName(t.name)}, this is about our Somero session.`)}`;
 
 // ================= Screens =================
 function Welcome() {
@@ -281,7 +281,7 @@ function Welcome() {
         ${words.map(([w, l, tp], i) => `<span class="word" style="left:${l};top:${tp};animation-delay:${300 + i * 120}ms,${i}s">${w}</span>`).join('')}
       </div>
       <div class="welcome-copy">
-        <div class="logo">${logoMark(28)} cranoly</div>
+        <div class="logo">${logoMark(28)} somero</div>
         <h1>The right teacher,<br />before the exam.</h1>
         <p>Vetted teachers for PLE, UCE and UACE — at your home or online. Pay by the session with Mobile Money.</p>
         <a class="btn btn-primary btn-block" href="#/onboarding">Get started</a>
@@ -998,7 +998,7 @@ function Profile() {
         ${row('refresh', 'Reset app', 'Clear everything on this device', 'data-act="reset"', '')}
         ${row('logout', 'Back to website', '', 'href="../"', chev, 'a')}
       </div>
-      <p class="fine">Cranoly · prototype build</p>`,
+      <p class="fine">Somero · prototype build</p>`,
   };
 }
 
