@@ -4,13 +4,16 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "rea
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  ArrowLeft, ArrowRight, ArrowUpRight, Check, ChevronLeft, Repeat2, RotateCcw, Shuffle,
+  ArrowLeft, ArrowRight, ArrowUpRight, Check, ChevronLeft, Repeat2, RotateCcw, Shuffle, Volume2,
 } from "lucide-react";
+import { languageOf } from "@/lib/languages";
+import { say } from "@/lib/smart";
 import MarkdownView from "@/components/MarkdownView";
 import { Card, inDeck } from "@/lib/cards";
-import { formatDuration, shuffled } from "@/lib/study";
+import { formatDuration, fromRecentNotes, notSeenLately, shuffled } from "@/lib/study";
+import { parseDay, useToday } from "@/lib/useToday";
 import { titleOf } from "@/lib/vault";
-import { useCards, useVault, vault } from "@/lib/store";
+import { getVault, useCards, useVault, vault } from "@/lib/store";
 import { getUI, setUI } from "@/lib/ui";
 
 const KIND_LABEL: Record<Card["kind"], string> = {
@@ -27,7 +30,7 @@ function Session({ cards: initial, title, shuffle, startWithBack }: {
   startWithBack: boolean;
 }) {
   const router = useRouter();
-  const { notes } = useVault();
+  const { notes, settings } = useVault();
   const [cards] = useState(initial);
   const [order, setOrder] = useState(() => (shuffle ? shuffled(cards) : cards));
   const [index, setIndex] = useState(0);
@@ -53,6 +56,7 @@ function Session({ cards: initial, title, shuffle, startWithBack }: {
     if (!flipped && !seen.current.has(card.id)) {
       seen.current.add(card.id);
       vault.logStudy();
+      vault.markSeen(card.id);
     }
     setFlipped(!flipped);
   }, [card, flipped]);
@@ -145,6 +149,11 @@ function Session({ cards: initial, title, shuffle, startWithBack }: {
   }
 
   const source = notes[card.noteId];
+  // Card fronts are in the language being learned, answers in your own (except fill-the-gap cards).
+  const learning = languageOf(settings.learning);
+  const own = card.kind === "cloze" ? learning : languageOf(settings.native);
+  const frontLang = reversed ? own : learning;
+  const backLang = reversed ? learning : own;
   const short = (s: string) => s.replace(/[*_=`[\]]/g, "").length <= 42 && !s.includes("\n");
 
   return (
@@ -211,6 +220,9 @@ function Session({ cards: initial, title, shuffle, startWithBack }: {
           >
             <div className="face face-front">
               <span className="face-kind">{reversed ? "Reversed" : KIND_LABEL[card.kind]}</span>
+              <button className="face-say" onClick={() => say(front, frontLang)} aria-label="Hear the question" title="Hear it">
+                <Volume2 size={16} />
+              </button>
               <div className={`face-content${short(front) ? " is-short" : ""}`}>
                 <MarkdownView content={front} interactive={false} />
               </div>
@@ -218,6 +230,9 @@ function Session({ cards: initial, title, shuffle, startWithBack }: {
             </div>
             <div className="face face-back">
               <span className="face-kind">Answer</span>
+              <button className="face-say" onClick={() => say(back, backLang)} aria-label="Hear the answer" title="Hear it">
+                <Volume2 size={16} />
+              </button>
               {card.kind !== "cloze" && (
                 <div className="face-question">
                   <MarkdownView content={front} interactive={false} />
@@ -262,12 +277,20 @@ function StudyRoute() {
   const deck = params.get("deck");
   const noteId = params.get("note");
   const shuffleParam = params.get("shuffle") === "1";
+  const smart = params.get("smart");
+  const today = useToday();
+  // Smart decks are worked out from the moment you start, so studying doesn't shrink the deck under you.
+  const [seenAtStart] = useState(() => getVault().seen);
 
   const { cards, title } = useMemo(() => {
+    if (smart === "stale") return { cards: today ? notSeenLately(all, seenAtStart, parseDay(today)) : [], title: "Not seen lately" };
+    if (smart === "recent") return { cards: today ? fromRecentNotes(all, notes, parseDay(today)) : [], title: "From this week’s notes" };
     if (noteId) return { cards: all.filter((c) => c.noteId === noteId), title: notes[noteId] ? titleOf(notes[noteId].path) : "Note" };
     if (deck) return { cards: all.filter((c) => inDeck(c, deck)), title: deck.split("/").join(" / ") };
     return { cards: all, title: "All cards" };
-  }, [all, deck, noteId, notes]);
+  }, [all, deck, noteId, notes, smart, today, seenAtStart]);
+
+  if (smart && !today) return null;
 
   if (!cards.length) {
     return (
@@ -283,7 +306,7 @@ function StudyRoute() {
 
   return (
     <Session
-      key={`${deck}|${noteId}|${shuffleParam}`}
+      key={`${deck}|${noteId}|${shuffleParam}|${smart}`}
       cards={cards}
       title={title}
       shuffle={shuffleParam || settings.shuffle}

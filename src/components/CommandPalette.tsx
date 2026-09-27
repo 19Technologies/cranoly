@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation";
 import {
   BookOpen, CalendarDays, Columns2, Download, Eye, FilePlus2, FileText, FolderPlus, Layers, Network,
   GraduationCap, PanelLeft, PanelRight, PenLine, Search, Settings, Shuffle, Trash2, TextCursorInput,
+  BookA, ListPlus, MessageCircleQuestion, Sparkles, SpellCheck, Volume2,
 } from "lucide-react";
+import { checkWriting, explain, findNewWords, hear, makeCards, withEditor } from "@/lib/smart";
 import { folderOf, titleOf } from "@/lib/vault";
 import { rank } from "@/lib/fuzzy";
 import { cardsOf, useVault, vault } from "@/lib/store";
@@ -53,6 +55,7 @@ function Palette({ mode }: { mode: "commands" | "notes" }) {
       { id: "daily", label: "Open today's daily note", icon: <CalendarDays size={15} />, run: () => { vault.openDaily(); router.push("/"); } },
       { id: "switch", label: "Quick switcher: open a note", icon: <FileText size={15} />, hint: "⌘O", run: () => setTimeout(() => setUI({ palette: "notes" })) },
       { id: "search", label: "Search all notes", icon: <Search size={15} />, hint: "⌘⇧F", run: () => { openSearch(); vault.setPanel("leftOpen", true); } },
+      { id: "ask", label: "Ask your notes a question", icon: <MessageCircleQuestion size={15} />, run: () => { openSearch(); vault.setPanel("leftOpen", true); } },
       { id: "graph", label: "Open graph view", icon: <Network size={15} />, run: go("/graph") },
       { id: "cards", label: "Open flashcard decks", icon: <Layers size={15} />, run: go("/flashcards") },
       { id: "study", label: "Study all flashcards", icon: <BookOpen size={15} />, run: go("/flashcards/study") },
@@ -70,6 +73,11 @@ function Palette({ mode }: { mode: "commands" | "notes" }) {
         { id: "edit", label: "Editing view", icon: <PenLine size={15} />, hint: "⌘E", run: () => { vault.setMode("edit"); router.push("/"); } },
         { id: "split", label: "Split view: edit and preview", icon: <Columns2 size={15} />, run: () => { vault.setMode("split"); router.push("/"); } },
         { id: "rename", label: `Rename “${titleOf(activeNote.path)}”`, icon: <TextCursorInput size={15} />, run: () => { setUI({ pendingRename: activeNote.id }); router.push("/"); } },
+        { id: "check", label: "Check my writing", icon: <SpellCheck size={15} />, run: () => { router.push("/"); withEditor(checkWriting); } },
+        { id: "explain", label: "Explain the selected word", icon: <BookA size={15} />, run: () => { router.push("/"); withEditor(explain); } },
+        { id: "hear", label: "Hear the selected text", icon: <Volume2 size={15} />, run: () => withEditor(hear) },
+        { id: "new-words", label: "Find new words in this note", icon: <Sparkles size={15} />, run: () => { router.push("/"); withEditor(findNewWords); } },
+        { id: "make-cards", label: "Turn a word list into flashcards", icon: <ListPlus size={15} />, run: () => { router.push("/"); withEditor((v) => makeCards(v)); } },
       );
       if (count) list.splice(3, 0, { id: "study-note", label: `Study ${count} cards from “${titleOf(activeNote.path)}”`, icon: <BookOpen size={15} />, run: () => router.push(`/flashcards/study?note=${activeNote.id}`) });
       list.push({ id: "delete", label: `Delete “${titleOf(activeNote.path)}”`, icon: <Trash2 size={15} />, run: () => vault.deleteNote(activeNote.id) });

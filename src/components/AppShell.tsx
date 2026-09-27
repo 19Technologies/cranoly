@@ -18,6 +18,8 @@ import Logo from "./Logo";
 import TabBar from "./TabBar";
 import RightPanel from "./RightPanel";
 import Onboarding, { LearnButton } from "./Onboarding";
+import WordSheet from "./WordSheet";
+import NewWordsSheet from "./NewWordsSheet";
 
 function Toasts() {
   const toasts = useToasts();
@@ -348,6 +350,8 @@ export default function AppShell({ children }: { children: ReactNode }) {
       <EditToolbar />
       <CommandPalette />
       <Onboarding />
+      <WordSheet />
+      <NewWordsSheet />
       <Toasts />
     </div>
   );

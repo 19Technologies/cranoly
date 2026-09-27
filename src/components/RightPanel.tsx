@@ -4,9 +4,9 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowUpRight, ChevronDown, GitFork, Layers, Link2, ListTree } from "lucide-react";
 import { Note, folderOf, titleOf } from "@/lib/vault";
-import { extractHeadings, stripInline } from "@/lib/links";
+import { extractHeadings, stripInline, unlinkedMentions } from "@/lib/links";
 import { buildGraph } from "@/lib/graph";
-import { cardsOf, indexOf, useVault, vault } from "@/lib/store";
+import { cardsOf, indexOf, toast, useVault, vault } from "@/lib/store";
 import { RightTab, setUI, useUI } from "@/lib/ui";
 import GraphCanvas from "./GraphCanvas";
 
@@ -62,6 +62,55 @@ function Backlinks({ note }: { note: Note }) {
         ))}
     </>
   );
+}
+
+/** Notes that name this one without linking to it, each with a one-tap Link button. */
+function UnlinkedMentions({ note }: { note: Note }) {
+  const { notes } = useVault();
+  const [open, setOpen] = useState(true);
+  const title = titleOf(note.path);
+  const mentions = useMemo(() => unlinkedMentions(note, notes), [note, notes]);
+  return (
+    <>
+      <button className="pane-section-head" onClick={() => setOpen(!open)} aria-expanded={open}>
+        <ChevronDown size={14} className={`collapse-icon${open ? "" : " is-collapsed"}`} />
+        <span>Unlinked mentions</span>
+        <span className="pane-count">{mentions.length}</span>
+      </button>
+      {open &&
+        (mentions.length ? (
+          mentions.map((m) => (
+            <div key={`${m.note.id}:${m.index}`} className="search-result mention">
+              <button className="search-result-file" onClick={(e) => vault.openNote(m.note.id, { newTab: e.metaKey || e.ctrlKey })}>
+                {titleOf(m.note.path)}
+              </button>
+              <div className="mention-row">
+                <span className="search-match">
+                  <MentionSnippet text={m.snippet} title={title} />
+                </span>
+                <button
+                  className="btn btn-sm mention-link"
+                  onClick={() => {
+                    if (!vault.linkMention(m.note.id, m.index, m.length, title)) toast("That text changed. Try again.");
+                  }}
+                >
+                  <Link2 size={13} /> Link
+                </button>
+              </div>
+            </div>
+          ))
+        ) : (
+          <p className="pane-empty">No other note mentions “{title}” without a link.</p>
+        ))}
+    </>
+  );
+}
+
+function MentionSnippet({ text, title }: { text: string; title: string }) {
+  const plain = stripInline(text);
+  const escaped = title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const parts = plain.split(new RegExp(`(${escaped})`, "i"));
+  return <>{parts.map((p, i) => (i % 2 ? <mark key={i}>{p}</mark> : p))}</>;
 }
 
 function Outgoing({ note }: { note: Note }) {
@@ -193,7 +242,12 @@ export default function RightPanel({ note }: { note: Note }) {
       </div>
       <div className="pane-view">
         <div className="pane-view-title">{tab.label}</div>
-        {tab.id === "backlinks" && <Backlinks note={note} />}
+        {tab.id === "backlinks" && (
+          <>
+            <Backlinks note={note} />
+            <UnlinkedMentions note={note} />
+          </>
+        )}
         {tab.id === "outgoing" && <Outgoing note={note} />}
         {tab.id === "cards" && <Cards note={note} />}
         {tab.id === "outline" && <Outline note={note} />}

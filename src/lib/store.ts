@@ -114,6 +114,7 @@ export function toast(message: string, action?: Toast["action"]) {
   toasts = [...toasts.slice(-2), t];
   emitToasts();
   setTimeout(() => dismissToast(t.id), action ? 6000 : 3000);
+  return t.id;
 }
 
 export function dismissToast(id: number) {
@@ -358,6 +359,30 @@ export const vault = {
 
   updateSettings(patch: Partial<Settings>) {
     set((s) => ({ ...s, settings: { ...s.settings, ...patch } }));
+  },
+
+  /** Remember when a card's answer was last revealed. */
+  markSeen(cardId: string) {
+    set((s) => ({ ...s, seen: { ...s.seen, [cardId]: Date.now() } }));
+  },
+
+  /** Add a line (usually a new flashcard) to the end of a note. */
+  appendLine(id: string, line: string) {
+    const note = state.notes[id];
+    if (!note) return;
+    const content = note.content;
+    const glue = !content || content.endsWith("\n") ? "" : "\n";
+    vault.updateNote(id, `${content}${glue}${line}\n`);
+  },
+
+  /** Turn an unlinked mention of `title` into a [[link]]. Returns false if the text moved. */
+  linkMention(id: string, index: number, length: number, title: string) {
+    const note = state.notes[id];
+    const found = note?.content.slice(index, index + length);
+    if (!note || found?.toLowerCase() !== title.toLowerCase()) return false;
+    const link = found === title ? `[[${title}]]` : `[[${title}|${found}]]`;
+    vault.updateNote(id, note.content.slice(0, index) + link + note.content.slice(index + length));
+    return true;
   },
 
   logStudy(count = 1) {

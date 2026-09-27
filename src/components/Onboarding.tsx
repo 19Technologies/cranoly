@@ -2,7 +2,8 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, GraduationCap, Moon, MonitorSmartphone, Sun, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookA, GraduationCap, Moon, MonitorSmartphone, SpellCheck, Sun, Volume2, X } from "lucide-react";
+import { LANGUAGES } from "@/lib/languages";
 import { useVault, vault } from "@/lib/store";
 import { setUI, useUI } from "@/lib/ui";
 
@@ -105,6 +106,26 @@ function DemoGraph() {
   );
 }
 
+function DemoSmart() {
+  return (
+    <div className="ob-demo ob-demo-smart" aria-hidden>
+      <div className="ob-sel-bar">
+        <span><BookA size={13} /> Explain</span>
+        <span><Volume2 size={13} /> Hear</span>
+        <span><SpellCheck size={13} /> Check</span>
+      </div>
+      <div className="ob-line">
+        Der <span className="ob-selected">Hund</span> schläft im <span className="ob-issue">garten</span>.
+      </div>
+      <div className="ob-definition">
+        <b><span className="ob-article">der</span> Hund</b>
+        <span>dog, hound</span>
+        <span className="ob-pill tint-sun">Save card</span>
+      </div>
+    </div>
+  );
+}
+
 function DemoShortcuts() {
   const keys: Array<[string, string]> = [
     ["⌘K", "Commands"],
@@ -163,6 +184,16 @@ function DemoTheme() {
           </button>
         ))}
       </div>
+      <label className="ob-lang">
+        <span>I’m learning</span>
+        <select value={settings.learning} onChange={(e) => vault.updateSettings({ learning: e.target.value })}>
+          {LANGUAGES.map((l) => (
+            <option key={l.code} value={l.code}>
+              {l.name}
+            </option>
+          ))}
+        </select>
+      </label>
       <p className="ob-fine">
         Tip: add Cranoly to your home screen from Settings → Install the app. It works offline.
       </p>
@@ -214,7 +245,18 @@ const STEPS: Step[] = [
     demo: <DemoGraph />,
   },
   {
-    eyebrow: "Step 5 · Speed",
+    eyebrow: "Step 5 · Smart tools",
+    title: "Your notebook helps you learn.",
+    body: (
+      <>
+        Select a word to <b>Explain</b> it, <b>Hear</b> it or save it as a card. <b>Check my writing</b> finds mistakes,{" "}
+        <b>Find new words</b> turns any text into cards, and search answers questions from your notes.
+      </>
+    ),
+    demo: <DemoSmart />,
+  },
+  {
+    eyebrow: "Step 6 · Speed",
     title: "Move fast.",
     body: "A few shortcuts and gestures get you anywhere in a second.",
     demo: <DemoShortcuts />,
@@ -222,7 +264,7 @@ const STEPS: Step[] = [
   {
     eyebrow: "Last step",
     title: "Make it yours.",
-    body: "Pick a look. You can change it any time from the ribbon or Settings.",
+    body: "Pick a look and the language you’re learning. You can change both any time in Settings.",
     demo: <DemoTheme />,
   },
 ];

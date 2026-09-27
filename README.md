@@ -11,6 +11,14 @@ A linked-notes vault for learning languages, in the style of Obsidian. You write
 - **Files**: folders, drag-and-drop between them, and inline renaming. Renaming a note updates every link that points to it. Deleting asks for confirmation inline and can be undone.
 - **Command palette** (`⌘K`), **quick switcher** (`⌘O`), full-text and `#tag` search (`⌘⇧F`), daily notes.
 - **Flashcards**: notes are turned into decks automatically. Study by flipping cards, swiping, or using the keyboard. A heatmap and a streak track your study days.
+- **Smart tools** for the language you're learning (set it in Settings → Language):
+  - **Explain**: select a word to see its meanings, examples and gender from Wiktionary, and save it as a card in one tap.
+  - **Hear it**: pronunciation with the device's own voices, in the editor and on flashcards.
+  - **Check my writing**: LanguageTool underlines spelling and grammar mistakes; tap one to fix it, or fix it and save it as a card.
+  - **Cards from anything**: pasted word lists ("Hund – dog") turn into cards, and **Find new words** lists every word in a text you don't have a card for yet.
+  - **Ask your notes**: type a question in search and get the best-matching passages back.
+  - **Unlinked mentions** in the backlinks panel, and **smart decks** ("Not seen lately", "From this week's notes").
+  - Explain and Check are the only features that go online, and only for the word or text you chose, when you tap. They can be turned off.
 - Everything is stored in `localStorage`. You can export and import the vault as JSON from Settings.
 
 ## On your phone

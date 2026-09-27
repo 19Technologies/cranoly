@@ -179,3 +179,44 @@ export function plainLine(line: string) {
     .replace(/\[\[([^\]|]+?)(?:#[^\]|]*)?(?:\|([^\]]+))?\]\]/g, (_m, t: string, a?: string) => a ?? t)
     .trim();
 }
+
+export interface Mention {
+  note: Note;
+  /** Position of the mention in the note's text. */
+  index: number;
+  length: number;
+  snippet: string;
+}
+
+/** Places where other notes name `target` in plain text without linking to it. */
+export function unlinkedMentions(target: Note, notes: Record<string, Note>, limit = 30): Mention[] {
+  const title = titleOf(target.path);
+  if (title.trim().length < 3) return [];
+  const escaped = title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const re = new RegExp(`(?<![\\p{L}\\p{N}])${escaped}(?![\\p{L}\\p{N}])`, "giu");
+  const blank = (s: string) => s.replace(/[^\n]/g, " ");
+  const out: Mention[] = [];
+  for (const note of Object.values(notes)) {
+    if (note.id === target.id) continue;
+    // Hide links, code and URLs (same length, so positions still line up).
+    const masked = note.content
+      .replace(/```[\s\S]*?```/g, blank)
+      .replace(/`[^`\n]*`/g, blank)
+      .replace(/\[\[[^\]\n]*\]\]/g, blank)
+      .replace(/\]\([^)\n]*\)/g, blank)
+      .replace(/https?:\/\/\S+/g, blank);
+    for (const m of masked.matchAll(re)) {
+      const index = m.index!;
+      const lineStart = note.content.lastIndexOf("\n", index - 1) + 1;
+      const lineEnd = note.content.indexOf("\n", index);
+      out.push({
+        note,
+        index,
+        length: m[0].length,
+        snippet: note.content.slice(lineStart, lineEnd === -1 ? undefined : lineEnd).trim(),
+      });
+      if (out.length >= limit) return out;
+    }
+  }
+  return out;
+}

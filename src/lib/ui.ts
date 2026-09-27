@@ -28,6 +28,10 @@ export interface UIState {
   rightTab: RightTab;
   /** The "Learn" onboarding tour is open. */
   onboarding: boolean;
+  /** "Explain a word": the word being looked up, and the note a card would be saved to. */
+  explain: { word: string; noteId: string | null } | null;
+  /** "Find new words": the text being mined, and the note new cards go to. */
+  newWords: { text: string; noteId: string } | null;
 }
 
 const INITIAL: UIState = {
@@ -44,6 +48,8 @@ const INITIAL: UIState = {
   installPrompt: null,
   rightTab: "backlinks",
   onboarding: false,
+  explain: null,
+  newWords: null,
 };
 
 let ui = INITIAL;

@@ -5,12 +5,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft, ArrowRight, BookOpen, ClipboardCopy, Columns2, Command, GitFork, Layers, Link2, MoreHorizontal, MoreVertical,
-  PanelLeft, PenLine, TextCursorInput, Trash2,
+  ListPlus, PanelLeft, PenLine, Sparkles, SpellCheck, TextCursorInput, Trash2,
 } from "lucide-react";
 import { Note, ViewMode, folderOf, titleOf } from "@/lib/vault";
 import { cardsOf, toast, useVault, vault } from "@/lib/store";
 import { setUI, useUI } from "@/lib/ui";
 import { focusEditor } from "@/lib/cm";
+import { checkWriting, findNewWords, makeCards, withEditor } from "@/lib/smart";
 import MarkdownView from "./MarkdownView";
 import Sheet, { type Anchor } from "./Sheet";
 import Editor from "./Editor";
@@ -212,6 +213,11 @@ function NoteMenu({ note, onClose }: { note: Note; onClose: () => void }) {
         {item(<Link2 size={16} />, "Backlinks, cards and outline", () => { onClose(); setUI({ mobileRight: true }); })}
       </span>
       {item(<GitFork size={16} />, "Open graph view", () => { onClose(); router.push("/graph"); })}
+      <span className="menu-sep" />
+      {item(<SpellCheck size={16} />, "Check my writing", () => { onClose(); withEditor(checkWriting); })}
+      {item(<Sparkles size={16} />, "Find new words", () => { onClose(); withEditor(findNewWords); })}
+      {item(<ListPlus size={16} />, "Turn word list into cards", () => { onClose(); withEditor((v) => makeCards(v)); })}
+      <span className="menu-sep" />
       {item(<ClipboardCopy size={16} />, "Copy note text", () => {
         navigator.clipboard?.writeText(note.content).then(() => toast("Copied to clipboard"), () => toast("Couldn't copy"));
         onClose();

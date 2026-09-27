@@ -1,6 +1,7 @@
 // Study helpers. No scheduling or difficulty ratings: just decks you flip through,
 // plus a per-day activity log that feeds the heatmap and streak.
-import { isoDay } from "./vault";
+import { isoDay, type Note } from "./vault";
+import type { Card } from "./cards";
 
 export function shuffled<T>(items: T[]): T[] {
   const a = [...items];
@@ -58,4 +59,20 @@ export function formatDuration(ms: number) {
   const s = Math.round(ms / 1000);
   const m = Math.floor(s / 60);
   return m ? `${m}m ${String(s % 60).padStart(2, "0")}s` : `${s}s`;
+}
+
+const DAY = 86_400_000;
+
+/** Cards never revealed, or not revealed in the last week, oldest first. */
+export function notSeenLately(cards: Card[], seen: Record<string, number>, today: Date, days = 7) {
+  const cutoff = today.getTime() - (days - 1) * DAY;
+  return cards
+    .filter((c) => !seen[c.id] || seen[c.id] < cutoff)
+    .sort((a, b) => (seen[a.id] ?? 0) - (seen[b.id] ?? 0));
+}
+
+/** Cards from notes written or edited in the last week. */
+export function fromRecentNotes(cards: Card[], notes: Record<string, Note>, today: Date, days = 7) {
+  const cutoff = today.getTime() - (days - 1) * DAY;
+  return cards.filter((c) => (notes[c.noteId]?.updated ?? 0) >= cutoff);
 }

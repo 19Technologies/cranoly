@@ -1,4 +1,5 @@
 // Core data model, persistence and migration from earlier builds.
+import { deviceLanguage } from "./languages";
 
 export interface Note {
   id: string;
@@ -19,6 +20,12 @@ export interface Settings {
   blurAnswersInNotes: boolean;
   showTagsInGraph: boolean;
   showOrphansInGraph: boolean;
+  /** Language being learned (spelling, voices, lookups, grammar checks). */
+  learning: string;
+  /** The learner's own language. */
+  native: string;
+  /** Explain and Check may ask Wiktionary / LanguageTool (only when tapped). */
+  onlineLookups: boolean;
 }
 
 export interface Workspace {
@@ -39,12 +46,13 @@ export interface VaultState {
   folders: string[];
   /** ISO date (YYYY-MM-DD) → number of cards studied that day. */
   activity: Record<string, number>;
+  /** Card id → when its answer was last revealed (for "Not seen lately"). */
+  seen: Record<string, number>;
   settings: Settings;
   workspace: Workspace;
 }
 
 export const STORAGE_KEY = "cranoly-vault";
-/** Keys written by earlier builds; read once so nobody loses notes. */
 // Earlier names of the app, newest first. Their vaults move to STORAGE_KEY on first load.
 const OLDER_KEYS = ["green-graphite-vault", "kurzbite-vault-v2"];
 
@@ -55,6 +63,9 @@ export const DEFAULT_SETTINGS: Settings = {
   blurAnswersInNotes: true,
   showTagsInGraph: true,
   showOrphansInGraph: true,
+  learning: "de",
+  native: "en",
+  onlineLookups: true,
 };
 
 export const titleOf = (path: string) => path.slice(path.lastIndexOf("/") + 1);
@@ -75,13 +86,14 @@ export function isoDay(d: Date) {
 }
 
 /** A new vault is empty: no starter notes. */
-export function emptyState(): VaultState {
+export function emptyState(native = "en"): VaultState {
   return {
     ready: true,
     notes: {},
     folders: [],
     activity: {},
-    settings: { ...DEFAULT_SETTINGS },
+    seen: {},
+    settings: { ...DEFAULT_SETTINGS, native },
     workspace: {
       tabs: [],
       active: null,
@@ -128,7 +140,8 @@ export function normalize(input: Partial<VaultState>): VaultState {
     notes,
     folders: Array.isArray(input.folders) ? input.folders : [],
     activity: input.activity && typeof input.activity === "object" ? input.activity : {},
-    settings: { ...DEFAULT_SETTINGS, ...(input.settings ?? {}) },
+    seen: input.seen && typeof input.seen === "object" ? input.seen : {},
+    settings: { ...DEFAULT_SETTINGS, native: deviceLanguage(), ...(input.settings ?? {}) },
     workspace: ws,
   };
 }
@@ -181,7 +194,7 @@ export function loadState(): VaultState {
     if (saveState(state)) localStorage.removeItem(key);
     return state;
   }
-  const state = migrateLegacy() ?? emptyState();
+  const state = migrateLegacy() ?? emptyState(deviceLanguage());
   saveState(state);
   return state;
 }

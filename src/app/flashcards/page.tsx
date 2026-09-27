@@ -3,9 +3,9 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Flame, Layers, Play, Shuffle, CalendarCheck, FileText } from "lucide-react";
+import { ArrowRight, Flame, Layers, Play, Shuffle, CalendarCheck, CalendarClock, FileText, Hourglass } from "lucide-react";
 import { buildDecks } from "@/lib/cards";
-import { heatmap, streak } from "@/lib/study";
+import { fromRecentNotes, heatmap, notSeenLately, streak } from "@/lib/study";
 import { useCards, useVault } from "@/lib/store";
 import { parseDay, useToday } from "@/lib/useToday";
 
@@ -48,13 +48,33 @@ function Heatmap({ activity, today }: { activity: Record<string, number>; today:
 }
 
 export default function FlashcardsPage() {
-  const { activity } = useVault();
+  const { activity, seen, notes } = useVault();
   const cards = useCards();
   const today = useToday();
   const router = useRouter();
   const decks = useMemo(() => buildDecks(cards), [cards]);
   const noteCount = new Set(cards.map((c) => c.noteId)).size;
   const days = Object.values(activity).filter((n) => n > 0).length;
+  const stale = today ? notSeenLately(cards, seen, parseDay(today)).length : 0;
+  const recent = today ? fromRecentNotes(cards, notes, parseDay(today)).length : 0;
+  const smart = [
+    {
+      id: "stale",
+      icon: <Hourglass size={18} />,
+      name: "Not seen lately",
+      hint: stale ? "Cards you haven’t revealed this week, oldest first" : "You’ve seen every card this week",
+      count: stale,
+      tint: "tint-sky",
+    },
+    {
+      id: "recent",
+      icon: <CalendarClock size={18} />,
+      name: "From this week’s notes",
+      hint: recent ? "Cards from notes you wrote or edited in the last 7 days" : "No notes edited this week",
+      count: recent,
+      tint: "tint-lilac",
+    },
+  ];
 
   return (
     <div className="page">
@@ -89,6 +109,31 @@ export default function FlashcardsPage() {
           <span>days studied</span>
         </div>
       </div>
+
+      {cards.length > 0 && (
+        <div className="smart-decks" aria-label="Smart decks">
+          {smart.map((d) =>
+            d.count ? (
+              <Link key={d.id} href={`/flashcards/study?smart=${d.id}`} className={`smart-deck ${d.tint}`}>
+                {d.icon}
+                <span className="smart-deck-text">
+                  <b>{d.name}</b>
+                  <small>{d.hint}</small>
+                </span>
+                <span className="deck-count">{d.count}</span>
+              </Link>
+            ) : (
+              <div key={d.id} className="smart-deck is-empty">
+                {d.icon}
+                <span className="smart-deck-text">
+                  <b>{d.name}</b>
+                  <small>{d.hint}</small>
+                </span>
+              </div>
+            ),
+          )}
+        </div>
+      )}
 
       <section className="card-panel">
         <div className="card-panel-head">

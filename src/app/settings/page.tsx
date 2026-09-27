@@ -5,6 +5,7 @@ import { Download, ClipboardCopy, Upload, RotateCcw, Smartphone, Share, Sun, Moo
 import { download } from "@/components/CommandPalette";
 import { toast, useVault, vault } from "@/lib/store";
 import type { Settings } from "@/lib/vault";
+import { LANGUAGES, languageOf } from "@/lib/languages";
 import { setUI, useUI } from "@/lib/ui";
 
 function Appearance() {
@@ -32,6 +33,41 @@ function Appearance() {
           </button>
         ))}
       </div>
+    </section>
+  );
+}
+
+function LanguageSettings() {
+  const { settings } = useVault();
+  const learning = languageOf(settings.learning);
+  const picker = (label: string, field: "learning" | "native") => (
+    <label className="field">
+      <span>{label}</span>
+      <select value={settings[field]} onChange={(e) => vault.updateSettings({ [field]: e.target.value })}>
+        {LANGUAGES.map((l) => (
+          <option key={l.code} value={l.code}>
+            {l.name}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+  return (
+    <section className="card-panel">
+      <div className="card-panel-head"><h2>Language</h2></div>
+      <div className="field-row">
+        {picker("I\u2019m learning", "learning")}
+        {picker("I speak", "native")}
+      </div>
+      <p className="setting-note">
+        Used for pronunciation, Explain, Check my writing and new-word lists.
+        {!learning.grammar && ` Check my writing isn\u2019t available for ${learning.name} yet.`}
+      </p>
+      <Toggle
+        field="onlineLookups"
+        label="Online lookups"
+        hint="Explain asks Wiktionary and Check asks LanguageTool. Only the word or text you chose is sent, and only when you tap. Everything else stays on this device."
+      />
     </section>
   );
 }
@@ -78,7 +114,9 @@ function InstallApp() {
   );
 }
 
-function Toggle({ label, hint, field }: { label: string; hint: string; field: Exclude<keyof Settings, "theme"> }) {
+type Switchable = { [K in keyof Settings]: Settings[K] extends boolean ? K : never }[keyof Settings];
+
+function Toggle({ label, hint, field }: { label: string; hint: string; field: Switchable }) {
   const { settings } = useVault();
   return (
     <label className="setting">
@@ -119,6 +157,7 @@ export default function SettingsPage() {
       </header>
 
       <Appearance />
+      <LanguageSettings />
       <InstallApp />
 
       <section className="card-panel">

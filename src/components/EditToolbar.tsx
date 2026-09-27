@@ -2,12 +2,14 @@
 
 import { useSyncExternalStore, type ReactNode } from "react";
 import {
-  Bold, ChevronDown, Hash, Heading2, IndentDecrease, IndentIncrease, Italic, Link2, ListChecks, Redo2, Undo2,
+  BookA, Bold, ChevronDown, Hash, Heading2, IndentDecrease, IndentIncrease, Italic, Link2, ListChecks, Redo2, SpellCheck,
+  Undo2, Volume2,
 } from "lucide-react";
 import { useUI } from "@/lib/ui";
 import type { EditorView } from "@codemirror/view";
 import { redo, undo } from "@codemirror/commands";
 import { activeEditor, indent, insertText, toggleLinePrefix, wrap } from "@/lib/cm";
+import { checkWriting, explain, hear } from "@/lib/smart";
 
 /** Height of the on-screen keyboard, from the visual viewport (0 when closed). */
 function subscribe(onChange: () => void) {
@@ -56,6 +58,16 @@ export default function EditToolbar() {
         </Tool>
         <Tool label="Redo" onPress={(v) => { redo(v); v.focus(); }}>
           <Redo2 size={18} />
+        </Tool>
+        <span className="tool-sep" />
+        <Tool label="Explain the word" onPress={explain}>
+          <BookA size={18} />
+        </Tool>
+        <Tool label="Hear it" onPress={hear}>
+          <Volume2 size={18} />
+        </Tool>
+        <Tool label="Check my writing" onPress={checkWriting}>
+          <SpellCheck size={18} />
         </Tool>
         <span className="tool-sep" />
         <Tool label="Link to a note" onPress={(v) => wrap(v, "[[", "]]")}>

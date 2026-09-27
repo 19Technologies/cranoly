@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { FilePlus2 } from "lucide-react";
+import { BookA, FilePlus2, ListPlus, Sparkles, SpellCheck, Volume2 } from "lucide-react";
 import { EditorSelection, EditorState, Prec, Transaction } from "@codemirror/state";
-import { EditorView, keymap, placeholder } from "@codemirror/view";
+import { EditorView, keymap, placeholder, type ViewUpdate } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { indentUnit } from "@codemirror/language";
 import { Note, folderOf, titleOf } from "@/lib/vault";
@@ -11,6 +11,18 @@ import { indexOf, toast, useVault, validateTitle, vault } from "@/lib/store";
 import { setUI, useUI } from "@/lib/ui";
 import { continueList, diff, indent, linkSelection, pairBrackets, setActiveEditor, activeEditor, wrap } from "@/lib/cm";
 import { livePreview, refreshPreview } from "@/lib/live-preview";
+import { writingIssues } from "@/lib/issues";
+import { languageOf } from "@/lib/languages";
+import { checkWriting, explain, findNewWords, hear, makeCards } from "@/lib/smart";
+import { wordListSize } from "@/lib/words";
+
+/** Floating bar over a selection (desktop): Explain, Hear, New words, Make cards, Check. */
+interface Bar {
+  top: number;
+  left: number;
+  words: number;
+  list: boolean;
+}
 
 interface Suggest {
   query: string;
@@ -26,8 +38,10 @@ export default function Editor({ note, autoFocus = false }: { note: Note; autoFo
   const wrapper = useRef<HTMLDivElement>(null);
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
-  const { notes } = useVault();
+  const { notes, settings } = useVault();
   const [suggest, setSuggest] = useState<Suggest | null>(null);
+  const [bar, setBar] = useState<Bar | null>(null);
+  const pressing = useRef(false);
   const index = indexOf(notes);
 
   // Link suggestions match the typed name directly (loose fuzzy matching linked the wrong notes).
@@ -115,6 +129,49 @@ export default function Editor({ note, autoFocus = false }: { note: Note; autoFo
       });
     };
 
+    const updateBar = (v: EditorView) => {
+      const sel = v.state.selection.main;
+      const text = sel.empty ? "" : v.state.sliceDoc(sel.from, sel.to);
+      if (!v.hasFocus || !text.trim() || text.length > 5000 || pressing.current || matchMedia("(pointer: coarse)").matches) {
+        return setBar(null);
+      }
+      const words = text.trim().split(/\s+/).length;
+      const list = wordListSize(text) > 0;
+      v.requestMeasure({
+        read: () => ({ a: v.coordsAtPos(sel.from), b: v.coordsAtPos(sel.to), box: frame.getBoundingClientRect() }),
+        write: ({ a, b, box }) => {
+          if (!a) return;
+          const mid = b && Math.abs(b.top - a.top) < 4 ? (a.left + b.left) / 2 : a.left;
+          setBar({ top: a.top - box.top, left: Math.max(130, Math.min(mid - box.left, box.width - 130)), words, list });
+        },
+      });
+    };
+
+    /** Pasted a list like "Hund – dog"? Offer to turn it into flashcards. */
+    const offerCards = (v: EditorView, u: ViewUpdate) => {
+      const lists: Array<{ from: number; to: number; text: string; count: number }> = [];
+      for (const tr of u.transactions) {
+        if (!tr.isUserEvent("input.paste")) continue;
+        tr.changes.iterChanges((_fa, _ta, from, to, inserted) => {
+          const text = inserted.toString();
+          const count = wordListSize(text);
+          if (count) lists.push({ from, to, text, count });
+        });
+      }
+      const p = lists[0];
+      if (!p) return;
+      toast(`That looks like a word list. Turn ${p.count} lines into flashcards?`, {
+        label: "Make cards",
+        run: () => {
+          if (!v.dom.isConnected) return;
+          const doc = v.state.doc.toString();
+          const at = doc.slice(p.from, p.to) === p.text ? p.from : doc.indexOf(p.text);
+          if (at === -1) return toast("The list has changed. Select it and choose Make cards.");
+          makeCards(v, { from: at, to: at + p.text.length });
+        },
+      });
+    };
+
     const suggestKeys = Prec.highest(
       keymap.of([
         ...(["ArrowDown", "ArrowUp"] as const).map((key) => ({
@@ -164,6 +221,7 @@ export default function Editor({ note, autoFocus = false }: { note: Note; autoFo
             ...defaultKeymap,
           ]),
           history(),
+          writingIssues,
           pairBrackets,
           indentUnit.of("\t"),
           EditorView.lineWrapping,
@@ -177,6 +235,7 @@ export default function Editor({ note, autoFocus = false }: { note: Note; autoFo
           livePreview((target) => !!live.current.index.resolve(target)),
           EditorView.domEventHandlers({
             mousedown: (e) => {
+              pressing.current = true;
               if (e.button !== 0 || e.shiftKey || e.altKey) return false;
               const el = (e.target as HTMLElement).closest?.<HTMLElement>(".ed-link, .ed-ext");
               if (!el) return false;
@@ -194,23 +253,39 @@ export default function Editor({ note, autoFocus = false }: { note: Note; autoFo
               setUI({ editorFocused: u.view.hasFocus });
               if (!u.view.hasFocus) setTimeout(() => setSuggest(null), 120);
             }
-            if (u.docChanged || u.selectionSet || u.focusChanged) updateSuggest(u.view);
+            if (u.docChanged || u.selectionSet || u.focusChanged) {
+              updateSuggest(u.view);
+              updateBar(u.view);
+            }
+            if (u.docChanged && !external) offerCards(u.view, u);
           }),
         ],
       }),
     });
     view.current = v;
     setActiveEditor(v);
+    const released = () => {
+      if (!pressing.current) return;
+      pressing.current = false;
+      updateBar(v);
+    };
+    document.addEventListener("mouseup", released);
     // On touch screens, focusing without a tap hides the bottom bar but opens no keyboard, so skip it.
     if (live.current.autoFocus && !matchMedia("(pointer: coarse)").matches) v.focus();
 
     return () => {
+      document.removeEventListener("mouseup", released);
       if (v.hasFocus) setUI({ editorFocused: false });
       if (activeEditor() === v) setActiveEditor(null);
       v.destroy();
       view.current = null;
     };
   }, [note.id]);
+
+  /** Selection-bar buttons act on this editor. */
+  const act = (fn: (v: EditorView) => void) => {
+    if (view.current) fn(view.current);
+  };
 
   // Outside changes (a rename rewriting links, a task ticked in reading view, another tab):
   // apply only the part that changed so the caret stays put.
@@ -244,6 +319,33 @@ export default function Editor({ note, autoFocus = false }: { note: Note; autoFo
   return (
     <div className="editor" ref={wrapper}>
       <div ref={host} />
+      {bar && (
+        <div className="sel-bar" style={{ top: bar.top, left: bar.left }} role="toolbar" aria-label="Selection" onMouseDown={(e) => e.preventDefault()}>
+          {bar.words <= 4 && (
+            <button onClick={() => act(explain)} title="Explain: meaning and grammar">
+              <BookA size={15} /> Explain
+            </button>
+          )}
+          <button onClick={() => act(hear)} title="Hear it">
+            <Volume2 size={15} /> Hear
+          </button>
+          {bar.list && (
+            <button onClick={() => act((v) => makeCards(v))} title="Turn these lines into flashcards">
+              <ListPlus size={15} /> Make cards
+            </button>
+          )}
+          {bar.words >= 3 && !bar.list && (
+            <button onClick={() => act(findNewWords)} title="List the words you don't have cards for">
+              <Sparkles size={15} /> New words
+            </button>
+          )}
+          {languageOf(settings.learning).grammar && bar.words >= 2 && (
+            <button onClick={() => act((v) => checkWriting(v, "selection"))} title="Check spelling and grammar">
+              <SpellCheck size={15} /> Check
+            </button>
+          )}
+        </div>
+      )}
       {suggest && (
         <ul className="suggest" style={{ top: suggest.top + 6, left: Math.max(0, suggest.left - 12) }} role="listbox">
           {options.map((n, i) => (

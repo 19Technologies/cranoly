@@ -2,11 +2,24 @@
 
 import { useEffect, useMemo, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Hash, Search, X } from "lucide-react";
+import { Hash, MessageCircleQuestion, Search, X } from "lucide-react";
 import { titleOf, folderOf } from "@/lib/vault";
-import { indexOf, useVault, vault } from "@/lib/store";
+import { getVault, indexOf, useVault, vault } from "@/lib/store";
+import { ask, isQuestion, questionTerms, stem } from "@/lib/ask";
+import { languageOf } from "@/lib/languages";
 import { plainLine } from "@/lib/links";
 import { setUI, useUI } from "@/lib/ui";
+
+/** Highlight words whose stem matches a question term ("datives" → "Dativ"). */
+function highlightStems(text: string, stems: string[]) {
+  if (!stems.length) return text;
+  return text.split(/(\p{L}[\p{L}\p{M}'’-]*)/u).map((part, i) => {
+    if (i % 2 === 0) return part;
+    const s = stem(part);
+    const hit = stems.some((t) => s === t || (s.length >= 5 && t.length >= 5 && (s.startsWith(t) || t.startsWith(s))));
+    return hit ? <mark key={i}>{part}</mark> : part;
+  });
+}
 
 function highlight(text: string, terms: string[]) {
   if (!terms.length) return text;
@@ -15,7 +28,7 @@ function highlight(text: string, terms: string[]) {
 }
 
 export default function SearchPanel() {
-  const { notes } = useVault();
+  const { notes, settings } = useVault();
   const { searchQuery, leftView } = useUI();
   const input = useRef<HTMLInputElement>(null);
   const router = useRouter();
@@ -54,6 +67,22 @@ export default function SearchPanel() {
       .sort((a, b) => b.score - a.score);
   }, [notes, index, tagFilters, terms]);
 
+  // Questions ("what did I learn about the dative?") get the best-matching passages as answers.
+  const question = isQuestion(searchQuery) && !tagFilters.length;
+  const answers = useMemo(() => {
+    if (!question) return [];
+    const stop = [...languageOf(settings.learning).common, ...languageOf(settings.native).common];
+    return ask(searchQuery, Object.values(notes), stop);
+  }, [question, searchQuery, notes, settings.learning, settings.native]);
+  const answerTerms = useMemo(() => (question ? questionTerms(searchQuery) : []), [question, searchQuery]);
+
+  const openAt = (id: string, line: number) => {
+    vault.openNote(id);
+    if (getVault().workspace.mode !== "read") setUI({ pendingLine: line });
+    setUI({ mobileLeft: false });
+    if (pathname !== "/") router.push("/");
+  };
+
   const tags = useMemo(
     () => [...index.tags.entries()].sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0])),
     [index],
@@ -72,7 +101,7 @@ export default function SearchPanel() {
         <input
           ref={input}
           value={searchQuery}
-          placeholder="Search notes, or #tag"
+          placeholder="Search, #tag, or ask a question"
           onChange={(e) => setUI({ searchQuery: e.target.value })}
           onKeyDown={(e) => e.key === "Escape" && setUI({ searchQuery: "" })}
         />
@@ -85,9 +114,25 @@ export default function SearchPanel() {
 
       {searchQuery.trim() ? (
         <div className="search-results">
-          <div className="panel-caption">
-            {results.length} {results.length === 1 ? "note" : "notes"}
-          </div>
+          {question && (
+            <div className="answers">
+              <div className="panel-caption">
+                <MessageCircleQuestion size={13} /> From your notes
+              </div>
+              {answers.map((a) => (
+                <button key={`${a.note.id}:${a.line}`} className="answer" onClick={() => openAt(a.note.id, a.line)}>
+                  <span className="answer-text">{highlightStems(a.text.slice(0, 220), answerTerms)}</span>
+                  <span className="answer-source">{titleOf(a.note.path)}</span>
+                </button>
+              ))}
+              {!answers.length && <p className="panel-empty">Nothing in your notes answers that yet.</p>}
+            </div>
+          )}
+          {(!question || results.length > 0) && (
+            <div className="panel-caption">
+              {results.length} {results.length === 1 ? "note" : "notes"}
+            </div>
+          )}
           {results.map(({ note, lines }) => (
             <button key={note.id} className="search-result" onClick={(e) => open(note.id, e)}>
               <span className="search-result-title">{highlight(titleOf(note.path), terms)}</span>
@@ -99,7 +144,7 @@ export default function SearchPanel() {
               ))}
             </button>
           ))}
-          {!results.length && <p className="panel-empty">Nothing matches “{searchQuery.trim()}”.</p>}
+          {!results.length && !question && <p className="panel-empty">Nothing matches “{searchQuery.trim()}”.</p>}
         </div>
       ) : (
         <div className="tag-list">
