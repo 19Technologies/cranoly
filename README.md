@@ -32,6 +32,16 @@ Cranoly follows the Obsidian mobile app's layout:
 
 **Installing it:** open the site on your phone. In Safari tap **Share → Add to Home Screen**. In Chrome use **Install app** (also under Settings → Install the app). Once installed it opens full-screen, and after the first visit it works offline.
 
+## Android app
+
+The Android app is the same code, packaged with [Capacitor](https://capacitorjs.com). Inside the app the Android back button closes sheets and goes back, the status bar follows the theme, and flipping or saving a card gives a small vibration.
+
+```bash
+npm run apk   # static export → android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+You need the Android SDK and JDK 21. On a machine with only JDK 17, add `java.release=17` to `android/local.properties` (it isn't committed): Capacitor's code builds fine as Java 17.
+
 ## Writing flashcards
 
 | Syntax | Result |

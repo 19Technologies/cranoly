@@ -2,11 +2,13 @@
 
 import { useEffect } from "react";
 import { setUI } from "@/lib/ui";
+import { isApp } from "@/lib/native";
 
 /** Registers the offline service worker and remembers the browser's install prompt. */
 export default function ServiceWorker() {
   useEffect(() => {
-    if (process.env.NODE_ENV === "production" && "serviceWorker" in navigator) {
+    // The Android app already has every file on the device, so it doesn't need the offline cache.
+    if (process.env.NODE_ENV === "production" && "serviceWorker" in navigator && !isApp()) {
       navigator.serviceWorker.register("/sw.js", { scope: "/", updateViaCache: "none" }).catch(() => {});
     }
     const onPrompt = (e: Event) => {

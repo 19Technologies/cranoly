@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { languageOf } from "@/lib/languages";
 import { say } from "@/lib/smart";
+import { haptic } from "@/lib/native";
 import MarkdownView from "@/components/MarkdownView";
 import { Card, inDeck } from "@/lib/cards";
 import { formatDuration, fromRecentNotes, notSeenLately, shuffled } from "@/lib/study";
@@ -58,12 +59,14 @@ function Session({ cards: initial, title, shuffle, startWithBack }: {
       vault.logStudy();
       vault.markSeen(card.id);
     }
+    haptic();
     setFlipped(!flipped);
   }, [card, flipped]);
 
   const move = useCallback(
     (delta: 1 | -1) => {
       if (delta === 1 && index === order.length - 1) {
+        haptic("success");
         setDone({ elapsed: Date.now() - started.current, seen: seen.current.size });
         return;
       }

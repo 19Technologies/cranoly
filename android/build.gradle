@@ -1,0 +1,49 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+
+buildscript {
+    
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.13.0'
+        classpath 'com.google.gms:google-services:4.4.4'
+
+        // NOTE: Do not place your application dependencies here; they belong
+        // in the individual module build.gradle files
+    }
+}
+
+apply from: "variables.gradle"
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+// Capacitor 8 targets Java 21. On a machine that only has JDK 17, put java.release=17 in
+// local.properties (per machine, not committed): Capacitor's code builds fine as Java 17.
+def localProps = new Properties()
+def localFile = rootProject.file("local.properties")
+if (localFile.exists()) localFile.withInputStream { localProps.load(it) }
+def javaRelease = localProps.getProperty("java.release")
+if (javaRelease) {
+    def version = JavaVersion.toVersion(javaRelease)
+    subprojects {
+        afterEvaluate { p ->
+            if (p.extensions.findByName("android")) {
+                p.android.compileOptions {
+                    sourceCompatibility version
+                    targetCompatibility version
+                }
+            }
+        }
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}

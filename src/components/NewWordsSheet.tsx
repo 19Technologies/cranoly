@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { BookA, Loader2, Plus, Volume2 } from "lucide-react";
 import Sheet from "./Sheet";
+import { haptic } from "@/lib/native";
 import { cardsOf, getVault, toast, useVault, vault } from "@/lib/store";
 import { languageOf } from "@/lib/languages";
 import { lookup, shortMeaning, withArticle } from "@/lib/lookup";
@@ -66,6 +67,7 @@ function NewWords({ text, noteId }: { text: string; noteId: string }) {
 
   const add = () => {
     if (!note || !ready.length) return;
+    haptic("success");
     vault.appendLine(note.id, ready.map((r) => `${r.front.trim()} :: ${r.meaning.trim()}`).join("\n"));
     toast(`Added ${ready.length} ${ready.length === 1 ? "card" : "cards"} to “${titleOf(note.path)}”`);
     close();

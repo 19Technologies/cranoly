@@ -19,6 +19,7 @@ import TabBar from "./TabBar";
 import RightPanel from "./RightPanel";
 import Onboarding, { LearnButton } from "./Onboarding";
 import WordSheet from "./WordSheet";
+import NativeBridge from "./NativeBridge";
 import NewWordsSheet from "./NewWordsSheet";
 
 function Toasts() {
@@ -353,6 +354,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
       <WordSheet />
       <NewWordsSheet />
       <Toasts />
+      <NativeBridge />
     </div>
   );
 }

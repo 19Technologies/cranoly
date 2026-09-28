@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { ArrowUpRight, Plus, Volume2, WifiOff } from "lucide-react";
 import Sheet from "./Sheet";
+import { haptic } from "@/lib/native";
 import { cardsOf, toast, useVault, vault } from "@/lib/store";
 import { languageOf, type Language } from "@/lib/languages";
 import { LookupError, lookup, shortMeaning, withArticle, type Lookup } from "@/lib/lookup";
@@ -76,6 +77,7 @@ function Result({ word, lang, noteId, onLookUp }: { word: string; lang: Language
   const note = noteId ? notes[noteId] : undefined;
   const save = () => {
     if (!note || !/\S\s*::\s*\S/.test(card)) return;
+    haptic("success");
     vault.appendLine(note.id, card.trim());
     toast(`Added a card to “${titleOf(note.path)}”`);
     close();
