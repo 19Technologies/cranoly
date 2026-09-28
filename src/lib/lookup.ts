@@ -129,7 +129,16 @@ export function lookup(word: string, lang: Language) {
 export function shortMeaning(result: Lookup) {
   const sense = result.entries.find((e) => !e.formOf)?.senses[0] ?? result.entries[0]?.senses[0];
   if (!sense) return "";
-  const first = sense.text.replace(/\s*\([^)]*\)/g, "").split(/;/)[0].trim();
+  // First sense, without notes in brackets or Latin species names ("house cat, Felis catus" → "house cat").
+  const parts = sense.text
+    .replace(/\s*\([^)]*\)/g, "")
+    .split(/;/)[0]
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+  const latin = /^[A-Z][a-z]+ [a-z]+(us|a|um|is|ae|ii|ensis|oides|atus|ata)( [a-z]+)?$/;
+  const plain = parts.filter((part) => !latin.test(part));
+  const first = (plain.length ? plain : parts).slice(0, 3).join(", ");
   return first.length > 60 ? first.slice(0, 57).trimEnd() + "…" : first;
 }
 

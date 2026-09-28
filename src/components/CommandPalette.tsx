@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   BookOpen, CalendarDays, Columns2, Download, Eye, FilePlus2, FileText, FolderPlus, Layers, Network,
   GraduationCap, PanelLeft, PanelRight, PenLine, Search, Settings, Shuffle, Trash2, TextCursorInput,
-  BookA, ListPlus, MessageCircleQuestion, Sparkles, SpellCheck, Volume2,
+  BookA, House, ListPlus, MessageCircleQuestion, Plus, Sparkles, SpellCheck, Volume2,
 } from "lucide-react";
 import { checkWriting, explain, findNewWords, hear, makeCards, withEditor } from "@/lib/smart";
 import { folderOf, titleOf } from "@/lib/vault";
@@ -50,6 +50,9 @@ function Palette({ mode }: { mode: "commands" | "notes" }) {
   const commands: Command[] = useMemo(() => {
     const go = (path: string) => () => router.push(path);
     const list: Command[] = [
+      { id: "add-word", label: "Add a word (meaning filled in for you)", icon: <Plus size={15} />, run: () => setUI({ addWord: { noteId: activeNote?.id ?? null, mode: "word" } }) },
+      { id: "paste-list", label: "Paste a word list", icon: <ListPlus size={15} />, run: () => setUI({ addWord: { noteId: activeNote?.id ?? null, mode: "list" } }) },
+      { id: "home", label: "Go home", icon: <House size={15} />, run: go("/home") },
       { id: "new", label: "Create new note", icon: <FilePlus2 size={15} />, run: () => { const id = vault.createNote({ folder: activeNote ? folderOf(activeNote.path) : "" }); setUI({ pendingRename: id }); router.push("/"); } },
       { id: "folder", label: "Create new folder", icon: <FolderPlus size={15} />, run: () => { vault.createFolder(); setUI({ leftView: "files" }); vault.setPanel("leftOpen", true); } },
       { id: "daily", label: "Open today's daily note", icon: <CalendarDays size={15} />, run: () => { vault.openDaily(); router.push("/"); } },

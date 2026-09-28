@@ -158,6 +158,9 @@ function withNote(s: VaultState, note: Note): VaultState {
   return { ...s, notes: { ...s.notes, [note.id]: note } };
 }
 
+/** Where words added with ＋ go, unless you pick another note. */
+export const WORDS_NOTE = "My words";
+
 export const vault = {
   openNote(id: string, opts: { newTab?: boolean } = {}) {
     set((s) => {
@@ -373,6 +376,23 @@ export const vault = {
     const content = note.content;
     const glue = !content || content.endsWith("\n") ? "" : "\n";
     vault.updateNote(id, `${content}${glue}${line}\n`);
+  },
+
+  /**
+   * Add a flashcard without writing any syntax. It goes to `noteId`, or to the "My words" note
+   * (created on first use). Returns the note it was saved to.
+   */
+  addCard(front: string, back: string, noteId?: string | null) {
+    return vault.addCards([[front, back]], noteId);
+  },
+
+  /** Several cards at once (a pasted word list), into one note. */
+  addCards(pairs: Array<[string, string]>, noteId?: string | null) {
+    const clean = (t: string) => t.replace(/\s*:{2,}\s*/g, " ").replace(/\s+/g, " ").trim();
+    let id = noteId && state.notes[noteId] ? noteId : Object.values(state.notes).find((n) => n.path === WORDS_NOTE)?.id;
+    if (!id) id = vault.createNote({ title: WORDS_NOTE, content: "", open: false });
+    vault.appendLine(id, pairs.map(([f, b]) => `${clean(f)} :: ${clean(b)}`).join("\n"));
+    return id;
   },
 
   /** Turn an unlinked mention of `title` into a [[link]]. Returns false if the text moved. */

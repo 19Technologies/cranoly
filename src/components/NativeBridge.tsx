@@ -8,8 +8,8 @@ import { getUI, setUI } from "@/lib/ui";
 import { isApp } from "@/lib/native";
 
 /**
- * Android app behaviour: the back button closes what's open, then goes back, and only at the
- * start leaves the app; the status bar icons follow the theme.
+ * Android app behaviour: the back button closes what's open, then goes back, and leaves the app
+ * from Home; the status bar icons follow the theme.
  */
 export default function NativeBridge() {
   const router = useRouter();
@@ -24,13 +24,16 @@ export default function NativeBridge() {
         const ui = getUI();
         if (ui.explain) return setUI({ explain: null });
         if (ui.newWords) return setUI({ newWords: null });
+        if (ui.addWord) return setUI({ addWord: null });
         if (ui.onboarding) return setUI({ onboarding: false });
         if (ui.palette) return setUI({ palette: null });
         if (ui.sheet) return setUI({ sheet: null });
         if (ui.mobileLeft || ui.mobileRight) return setUI({ mobileLeft: false, mobileRight: false });
-        if (pathname !== "/") return pathname.startsWith("/flashcards/study") ? router.push("/flashcards") : router.push("/");
-        if (getVault().workspace.historyIndex > 0) return vault.go(-1);
-        App.minimizeApp();
+        // Home is where the app starts, so back from Home leaves it. Other tabs go back to Home.
+        if (pathname === "/home") return App.minimizeApp();
+        if (pathname.startsWith("/flashcards/study")) return router.back();
+        if (pathname === "/") return getVault().workspace.historyIndex > 0 ? vault.go(-1) : router.push("/notes");
+        router.push("/home");
       });
       if (live) remove = () => handle.remove();
       else handle.remove();

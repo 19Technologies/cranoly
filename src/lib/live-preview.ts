@@ -87,6 +87,24 @@ class BulletWidget extends WidgetType {
 }
 const BULLET = Decoration.replace({ widget: new BulletWidget() });
 
+class ArrowWidget extends WidgetType {
+  constructor(readonly symbol: string) {
+    super();
+  }
+  eq(other: ArrowWidget) {
+    return other.symbol === this.symbol;
+  }
+  toDOM() {
+    const arrow = document.createElement("span");
+    arrow.className = "cm-card-arrow";
+    arrow.textContent = this.symbol;
+    return arrow;
+  }
+}
+const ONE_WAY = Decoration.replace({ widget: new ArrowWidget("→") });
+const TWO_WAY = Decoration.replace({ widget: new ArrowWidget("⇄") });
+const CARD_BACK = Decoration.mark({ class: "cm-card-back" });
+
 function build(view: EditorView, exists: (target: string) => boolean): DecorationSet {
   const { state } = view;
   const { doc } = state;
@@ -237,10 +255,18 @@ function build(view: EditorView, exists: (target: string) => boolean): Decoratio
       );
     }
 
-    // Flashcard separators: "front :: back", "front ::: back", and the "?" / "??" lines.
-    for (const m of text.matchAll(/(?<=\s):{2,3}(?=\s|$)/g)) {
+    // Flashcard separators: "front :: back" reads as "front → back" (":::" as ⇄) until the cursor is
+    // on the line; the "?" / "??" lines of multi-line cards stay visible.
+    for (const m of text.matchAll(/\s(:{2,3})(\s|$)/g)) {
       const s = line.from + m.index!;
-      if (!inCode(s)) out.push(CARD_SEP.range(s, s + m[0].length));
+      const e = s + m[0].length;
+      if (inCode(s)) continue;
+      if (onLine(line.from)) {
+        out.push(CARD_SEP.range(s + 1, s + 1 + m[1].length));
+      } else {
+        out.push((m[1].length === 3 ? TWO_WAY : ONE_WAY).range(s, e));
+        if (e < line.to) out.push(CARD_BACK.range(e, line.to));
+      }
     }
     if (/^\?{1,2}$/.test(text.trim()) && !inCode(line.from)) {
       const s = line.from + text.indexOf("?");

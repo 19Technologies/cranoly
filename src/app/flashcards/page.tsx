@@ -79,14 +79,16 @@ export default function FlashcardsPage() {
   return (
     <div className="page">
       <header className="page-header">
-        <p className="eyebrow"><span className="dot" /> Study</p>
-        <h1>Flashcards</h1>
+        <p className="eyebrow"><span className="dot" /> Flashcards</p>
+        <h1>Practice</h1>
         <p className="page-lede">
-          {cards.length} cards pulled from {noteCount} {noteCount === 1 ? "note" : "notes"}. Edit a note and its cards update
-          on their own.
+          {cards.length
+            ? `${cards.length} ${cards.length === 1 ? "card" : "cards"} from ${noteCount} ${noteCount === 1 ? "note" : "notes"}. Tap a deck to start.`
+            : "Add words with ＋ and they show up here as cards."}
         </p>
       </header>
 
+      {days > 0 && (
       <div className="stat-row">
         <div className="stat tint-sun">
           <Layers size={16} />
@@ -109,8 +111,9 @@ export default function FlashcardsPage() {
           <span>days studied</span>
         </div>
       </div>
+      )}
 
-      {cards.length > 0 && (
+      {cards.length > 0 && Object.keys(seen).length > 0 && (
         <div className="smart-decks" aria-label="Smart decks">
           {smart.map((d) =>
             d.count ? (
@@ -181,7 +184,7 @@ export default function FlashcardsPage() {
         )}
       </section>
 
-      <div className="two-col">
+      {days > 0 && <div className="two-col">
         <section className="card-panel">
           <div className="card-panel-head">
             <h2>Activity</h2>
@@ -189,7 +192,7 @@ export default function FlashcardsPage() {
           {today && <Heatmap activity={activity} today={today} />}
         </section>
 
-        <section className="card-panel cheatsheet">
+        <section className="card-panel cheatsheet only-wide">
           <div className="card-panel-head">
             <h2>Writing cards</h2>
           </div>
@@ -206,7 +209,7 @@ export default function FlashcardsPage() {
             <dd>Put the note&apos;s cards in a deck of your choice</dd>
           </dl>
         </section>
-      </div>
+      </div>}
     </div>
   );
 }

@@ -32,6 +32,8 @@ export interface UIState {
   explain: { word: string; noteId: string | null } | null;
   /** "Find new words": the text being mined, and the note new cards go to. */
   newWords: { text: string; noteId: string } | null;
+  /** The ＋ sheet: add a word (or paste a list) without any syntax. */
+  addWord: { noteId: string | null; mode: "word" | "list" } | null;
 }
 
 const INITIAL: UIState = {
@@ -50,6 +52,7 @@ const INITIAL: UIState = {
   onboarding: false,
   explain: null,
   newWords: null,
+  addWord: null,
 };
 
 let ui = INITIAL;

@@ -29,13 +29,17 @@ export const viewport: Viewport = {
 };
 
 // Applies the saved theme before first paint so the page never flashes the wrong one.
+// Inside the Android app every page address serves the start page's HTML, so if Android ever
+// reloads the app on another page, go back to the start (before React loads) instead of
+// rendering the wrong page. The website serves every page's own HTML and is unaffected.
+const APP_START_SCRIPT = `try{var C=window.Capacitor;if(C&&C.isNativePlatform&&C.isNativePlatform()&&location.pathname!=="/")location.replace("/")}catch(e){}`;
 const THEME_SCRIPT = `try{var s=JSON.parse(localStorage.getItem("cranoly-vault")||localStorage.getItem("green-graphite-vault")||"{}").settings||{};var t=s.theme||"paper";if(t==="system")t=matchMedia("(prefers-color-scheme: dark)").matches?"graphite":"paper";document.documentElement.dataset.theme=t}catch(e){document.documentElement.dataset.theme="paper"}`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${display.variable} ${ui.variable} ${mono.variable}`} data-theme="paper" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: APP_START_SCRIPT + THEME_SCRIPT }} />
       </head>
       <body>
         <AppShell>{children}</AppShell>

@@ -26,6 +26,8 @@ export interface Settings {
   native: string;
   /** Explain and Check may ask Wiktionary / LanguageTool (only when tapped). */
   onlineLookups: boolean;
+  /** The first-run welcome (language + first word) has been finished or skipped. */
+  onboarded: boolean;
 }
 
 export interface Workspace {
@@ -66,6 +68,7 @@ export const DEFAULT_SETTINGS: Settings = {
   learning: "de",
   native: "en",
   onlineLookups: true,
+  onboarded: false,
 };
 
 export const titleOf = (path: string) => path.slice(path.lastIndexOf("/") + 1);
@@ -141,7 +144,13 @@ export function normalize(input: Partial<VaultState>): VaultState {
     folders: Array.isArray(input.folders) ? input.folders : [],
     activity: input.activity && typeof input.activity === "object" ? input.activity : {},
     seen: input.seen && typeof input.seen === "object" ? input.seen : {},
-    settings: { ...DEFAULT_SETTINGS, native: deviceLanguage(), ...(input.settings ?? {}) },
+    settings: {
+      ...DEFAULT_SETTINGS,
+      native: deviceLanguage(),
+      // People who already have notes came before the welcome existed; don't show it to them.
+      onboarded: Object.keys(notes).length > 0,
+      ...(input.settings ?? {}),
+    },
     workspace: ws,
   };
 }

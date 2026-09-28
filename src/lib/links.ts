@@ -173,6 +173,9 @@ export function stripInline(line: string) {
     .replace(/(^|\W)[*_](\S.*?)[*_](?=\W|$)/g, "$1$2");
 }
 
+/** A flashcard line as people read it: "Hund :: dog" → "Hund → dog", "a ::: b" → "a ⇄ b". */
+export const friendlyCard = (line: string) => line.replace(/\s:::\s/g, " ⇄ ").replace(/\s::\s/g, " → ");
+
 /** A markdown line as readable plain text, for snippets. */
 export function plainLine(line: string) {
   return stripInline(line)

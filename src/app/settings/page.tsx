@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Download, ClipboardCopy, Upload, RotateCcw, Smartphone, Share, Sun, Moon, MonitorSmartphone } from "lucide-react";
+import { Download, ClipboardCopy, GraduationCap, Upload, RotateCcw, Smartphone, Sparkles, Share, Sun, Moon, MonitorSmartphone } from "lucide-react";
 import { download } from "@/components/CommandPalette";
 import { toast, useVault, vault } from "@/lib/store";
 import type { Settings } from "@/lib/vault";
@@ -176,12 +176,12 @@ export default function SettingsPage() {
       <section className="card-panel">
         <div className="card-panel-head"><h2>Your data</h2></div>
         <p className="setting-note">
-          Your vault is stored in this browser: {Object.keys(notes).length} notes, {Object.keys(activity).length} days of
-          study history, {(bytes / 1024).toFixed(1)} KB. Export it now and then so you have a backup.
+          Your notes live on this device: {Object.keys(notes).length} notes, {Object.keys(activity).length} days of study
+          history, {(bytes / 1024).toFixed(1)} KB. Save a backup now and then.
         </p>
         <div className="btn-row">
           <button className="btn" onClick={() => download("cranoly-vault.json", vault.exportJSON())}>
-            <Download size={14} /> Export vault
+            <Download size={14} /> Save a backup
           </button>
           <button
             className="btn"
@@ -197,7 +197,7 @@ export default function SettingsPage() {
             <ClipboardCopy size={14} /> Copy all as Markdown
           </button>
           <button className="btn" onClick={() => fileInput.current?.click()}>
-            <Upload size={14} /> Import vault
+            <Upload size={14} /> Restore a backup
           </button>
           <input
             ref={fileInput}
@@ -216,6 +216,18 @@ export default function SettingsPage() {
       </section>
 
       <section className="card-panel">
+        <div className="card-panel-head"><h2>Help</h2></div>
+        <div className="btn-row">
+          <button className="btn" onClick={() => setUI({ onboarding: true })}>
+            <GraduationCap size={14} /> Take the tour
+          </button>
+          <button className="btn" onClick={() => vault.updateSettings({ onboarded: false })}>
+            <Sparkles size={14} /> Show the welcome again
+          </button>
+        </div>
+      </section>
+
+      <section className="card-panel only-wide">
         <div className="card-panel-head"><h2>Keyboard</h2></div>
         <dl className="shortcuts">
           {SHORTCUTS.map(([k, v]) => (

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   CalendarDays, ChevronsUpDown, Dices, FileSearch, Folder, GitFork, Layers, Moon, PanelLeft, Search, Settings, SquareTerminal, Sun, X,
+  House, Plus,
 } from "lucide-react";
 import { cardsOf, dismissToast, getVault, indexOf, useToasts, useVault, vault } from "@/lib/store";
 import { getUI, openSearch, setUI, useUI } from "@/lib/ui";
@@ -21,6 +22,8 @@ import Onboarding, { LearnButton } from "./Onboarding";
 import WordSheet from "./WordSheet";
 import NativeBridge from "./NativeBridge";
 import NewWordsSheet from "./NewWordsSheet";
+import Welcome from "./Welcome";
+import AddWord from "./AddWord";
 
 function Toasts() {
   const toasts = useToasts();
@@ -208,6 +211,9 @@ function useTheme(choice: "paper" | "graphite" | "system", ready: boolean) {
   }, [choice, ready]);
 }
 
+// Phones open on Home. Only on launch: later visits to "/" are someone opening a note.
+let launched = false;
+
 export default function AppShell({ children }: { children: ReactNode }) {
   const { workspace, notes, ready, settings } = useVault();
   useTheme(settings.theme, ready);
@@ -252,7 +258,16 @@ export default function AppShell({ children }: { children: ReactNode }) {
     setUI({ mobileLeft: false, mobileRight: false, sheet: null });
   }, [pathname]);
 
+  useEffect(() => {
+    if (!ready || launched) return;
+    launched = true;
+    const phone = window.matchMedia("(max-width: 820px)").matches;
+    if (phone && pathname === "/" && !new URLSearchParams(window.location.search).has("note")) router.replace("/home");
+  }, [ready, pathname, router]);
+
   const ribbon: Array<{ label: string; icon: ReactNode; run: () => void; active?: boolean }> = [
+    { label: "Home", icon: <House size={18} />, run: () => router.push("/home"), active: pathname === "/home" },
+    { label: "Add a word", icon: <Plus size={18} />, run: () => setUI({ addWord: { noteId: pathname === "/" ? workspace.active : null, mode: "word" } }) },
     { label: "Open quick switcher", icon: <FileSearch size={18} />, run: () => setUI({ palette: "notes" }) },
     { label: "Open graph view", icon: <GitFork size={18} />, run: () => router.push("/graph"), active: pathname === "/graph" },
     { label: "Flashcards", icon: <Layers size={18} />, run: () => router.push("/flashcards"), active: pathname.startsWith("/flashcards") },
@@ -351,6 +366,8 @@ export default function AppShell({ children }: { children: ReactNode }) {
       <EditToolbar />
       <CommandPalette />
       <Onboarding />
+      <Welcome />
+      <AddWord />
       <WordSheet />
       <NewWordsSheet />
       <Toasts />

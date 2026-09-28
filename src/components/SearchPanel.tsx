@@ -27,7 +27,7 @@ function highlight(text: string, terms: string[]) {
   return text.split(re).map((part, i) => (i % 2 ? <mark key={i}>{part}</mark> : part));
 }
 
-export default function SearchPanel() {
+export default function SearchPanel({ autoFocus = false }: { autoFocus?: boolean }) {
   const { notes, settings } = useVault();
   const { searchQuery, leftView } = useUI();
   const input = useRef<HTMLInputElement>(null);
@@ -36,8 +36,8 @@ export default function SearchPanel() {
   const index = indexOf(notes);
 
   useEffect(() => {
-    if (leftView === "search") input.current?.focus();
-  }, [leftView]);
+    if (leftView === "search" || autoFocus) input.current?.focus();
+  }, [leftView, autoFocus]);
 
   const { tagFilters, terms } = useMemo(() => {
     const words = searchQuery.trim().split(/\s+/).filter(Boolean);

@@ -4,7 +4,7 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "rea
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  ArrowLeft, ArrowRight, ArrowUpRight, Check, ChevronLeft, Repeat2, RotateCcw, Shuffle, Volume2,
+  ArrowLeft, ArrowRight, ArrowUpRight, Check, Repeat2, RotateCcw, Shuffle, Volume2, X,
 } from "lucide-react";
 import { languageOf } from "@/lib/languages";
 import { say } from "@/lib/smart";
@@ -24,15 +24,20 @@ const KIND_LABEL: Record<Card["kind"], string> = {
   cloze: "Fill the gap",
 };
 
-function Session({ cards: initial, title, shuffle, startWithBack }: {
+function Session({ cards: initial, title, shuffle, startWithBack, limit }: {
   cards: Card[];
   title: string;
   shuffle: boolean;
   startWithBack: boolean;
+  /** Study only this many (a quick session from Home). Shuffled decks pick them at random. */
+  limit: number;
 }) {
   const router = useRouter();
   const { notes, settings } = useVault();
-  const [cards] = useState(initial);
+  const [cards] = useState(() => {
+    if (!limit) return initial;
+    return (shuffle ? shuffled(initial) : initial).slice(0, limit);
+  });
   const [order, setOrder] = useState(() => (shuffle ? shuffled(cards) : cards));
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
@@ -90,6 +95,12 @@ function Session({ cards: initial, title, shuffle, startWithBack }: {
     [cards],
   );
 
+  /** Back to wherever practice was started from (Home, Practice or a note). */
+  const leave = useCallback(() => {
+    if (window.history.length > 1) router.back();
+    else router.push("/flashcards");
+  }, [router]);
+
   const openSource = useCallback(() => {
     if (!card) return;
     vault.openNote(card.noteId);
@@ -112,11 +123,11 @@ function Session({ cards: initial, title, shuffle, startWithBack }: {
       else if (e.key === "s") restart(true);
       else if (e.key === "r" && !done) setReversed((r) => !r);
       else if (e.key === "o" && !done) openSource();
-      else if (e.key === "Escape") router.push("/flashcards");
+      else if (e.key === "Escape") leave();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [flip, move, restart, openSource, router, done]);
+  }, [flip, move, restart, openSource, leave, done]);
 
   if (done) {
     return (
@@ -143,9 +154,9 @@ function Session({ cards: initial, title, shuffle, startWithBack }: {
           <button className="btn" onClick={() => restart(true)}>
             <Shuffle size={14} /> Shuffle &amp; go again
           </button>
-          <Link href="/flashcards" className="btn btn-primary">
-            Back to decks
-          </Link>
+          <button className="btn btn-primary" onClick={leave}>
+            Done
+          </button>
         </div>
       </div>
     );
@@ -162,9 +173,9 @@ function Session({ cards: initial, title, shuffle, startWithBack }: {
   return (
     <div className="study">
       <header className="study-bar">
-        <Link href="/flashcards" className="btn btn-ghost">
-          <ChevronLeft size={16} /> Decks
-        </Link>
+        <button className="btn btn-ghost" onClick={leave}>
+          <X size={16} /> Close
+        </button>
         <div className="study-title">
           <span>{title}</span>
           <small>
@@ -229,7 +240,10 @@ function Session({ cards: initial, title, shuffle, startWithBack }: {
               <div className={`face-content${short(front) ? " is-short" : ""}`}>
                 <MarkdownView content={front} interactive={false} />
               </div>
-              <span className="face-hint">Tap or press Space to flip</span>
+              <span className="face-hint">
+                <span className="hint-touch">Tap to flip</span>
+                <span className="hint-keys">Tap or press Space to flip</span>
+              </span>
             </div>
             <div className="face face-back">
               <span className="face-kind">Answer</span>
@@ -265,6 +279,14 @@ function Session({ cards: initial, title, shuffle, startWithBack }: {
           {index === order.length - 1 ? <Check size={18} /> : <ArrowRight size={18} />}
         </button>
       </div>
+      <div className="study-options">
+        <button className="chip" onClick={() => restart(true)}>
+          <Shuffle size={15} /> Shuffle
+        </button>
+        <button className={`chip${reversed ? " on" : ""}`} onClick={() => setReversed((r) => !r)} aria-pressed={reversed}>
+          <Repeat2 size={15} /> Answer first
+        </button>
+      </div>
       <p className="study-keys">
         <kbd>Space</kbd> flip <kbd>←</kbd><kbd>→</kbd> move <kbd>S</kbd> shuffle <kbd>R</kbd> reverse <kbd>O</kbd> open note{" "}
         <kbd>Esc</kbd> exit
@@ -281,6 +303,7 @@ function StudyRoute() {
   const noteId = params.get("note");
   const shuffleParam = params.get("shuffle") === "1";
   const smart = params.get("smart");
+  const limit = Number(params.get("limit")) || 0;
   const today = useToday();
   // Smart decks are worked out from the moment you start, so studying doesn't shrink the deck under you.
   const [seenAtStart] = useState(() => getVault().seen);
@@ -309,9 +332,10 @@ function StudyRoute() {
 
   return (
     <Session
-      key={`${deck}|${noteId}|${shuffleParam}|${smart}`}
+      key={`${deck}|${noteId}|${shuffleParam}|${smart}|${limit}`}
       cards={cards}
-      title={title}
+      limit={limit}
+      title={limit ? "Practice" : title}
       shuffle={shuffleParam || settings.shuffle}
       startWithBack={settings.startWithBack}
     />

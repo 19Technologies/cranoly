@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft, ArrowRight, BookOpen, ClipboardCopy, Columns2, Command, GitFork, Layers, Link2, MoreHorizontal, MoreVertical,
-  ListPlus, PanelLeft, PenLine, Sparkles, SpellCheck, TextCursorInput, Trash2,
+  ListPlus, PenLine, Sparkles, SpellCheck, TextCursorInput, Trash2,
 } from "lucide-react";
 import { Note, ViewMode, folderOf, titleOf } from "@/lib/vault";
 import { cardsOf, toast, useVault, vault } from "@/lib/store";
@@ -287,10 +287,11 @@ function ViewHeader({ note, mode }: { note: Note; mode: ViewMode }) {
 /** Phone header, as in Obsidian mobile. */
 function MobileHeader({ note, mode }: { note?: Note; mode: ViewMode }) {
   const [menu, setMenu] = useState(false);
+  const router = useRouter();
   return (
     <header className="mobile-header">
-      <button className="icon-btn" aria-label="Open file explorer" onClick={() => setUI({ mobileLeft: true, leftView: "files" })}>
-        <PanelLeft size={20} />
+      <button className="icon-btn" aria-label="Back to notes" onClick={() => router.push("/notes")}>
+        <ArrowLeft size={20} />
       </button>
       <button className="mobile-title" onClick={() => setUI({ palette: "notes" })} aria-label="Switch note">
         <span>{note ? titleOf(note.path) : "Cranoly"}</span>
@@ -298,11 +299,14 @@ function MobileHeader({ note, mode }: { note?: Note; mode: ViewMode }) {
       {note && (
         <>
           <button
-            className="icon-btn"
-            aria-label={mode === "read" ? "Edit note" : "Reading view"}
-            onClick={() => vault.setMode(mode === "read" ? "edit" : "read")}
+            className="mobile-mode"
+            aria-label={mode === "read" ? "Edit note" : "Done editing"}
+            onClick={() => {
+              (document.activeElement as HTMLElement | null)?.blur();
+              vault.setMode(mode === "read" ? "edit" : "read");
+            }}
           >
-            {mode === "read" ? <PenLine size={19} /> : <BookOpen size={19} />}
+            {mode === "read" ? "Edit" : "Done"}
           </button>
           <button className="icon-btn" aria-label="More options" onClick={() => setMenu(true)}>
             <MoreVertical size={20} />
