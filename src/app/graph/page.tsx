@@ -36,7 +36,7 @@ export default function GraphPage() {
         onNodeClick={(n, e) => {
           if (n.kind === "tag") {
             openSearch(n.label);
-            vault.setPanel("leftOpen", true);
+            router.push("/search");
             return;
           }
           if (n.noteId) vault.openNote(n.noteId, { newTab: e.metaKey || e.ctrlKey });

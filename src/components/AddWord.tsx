@@ -2,10 +2,10 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, FilePlus2, ListPlus, Loader2, Volume2 } from "lucide-react";
+import { Check, FilePlus2, ListPlus, Loader2, ScanText, Volume2 } from "lucide-react";
 import Sheet from "./Sheet";
 import { haptic } from "@/lib/native";
-import { WORDS_NOTE, toast, useVault, vault } from "@/lib/store";
+import { toast, useVault, vault, wordsNoteTitle } from "@/lib/store";
 import { languageOf } from "@/lib/languages";
 import { useMeaning } from "@/lib/useMeaning";
 import { pairOf } from "@/lib/words";
@@ -15,17 +15,18 @@ import { setUI, useUI } from "@/lib/ui";
 
 const close = () => setUI({ addWord: null });
 
-/** Which note new words go to: the one you're in, or "My words". */
+/** Which note new words go to: the one you're in, or the words note ("My words"). */
 function NotePicker({ value, onChange }: { value: string | null; onChange: (id: string | null) => void }) {
-  const { notes } = useVault();
+  const { notes, settings } = useVault();
+  const words = wordsNoteTitle(settings);
   const list = Object.values(notes)
-    .filter((n) => n.path !== WORDS_NOTE)
+    .filter((n) => n.path !== words)
     .sort((a, b) => titleOf(a.path).localeCompare(titleOf(b.path)));
   return (
     <label className="add-target">
       <span>Save to</span>
       <select value={value ?? ""} onChange={(e) => onChange(e.target.value || null)}>
-        <option value="">{WORDS_NOTE}</option>
+        <option value="">{words}</option>
         {list.map((n) => (
           <option key={n.id} value={n.id}>
             {titleOf(n.path)}
@@ -36,10 +37,11 @@ function NotePicker({ value, onChange }: { value: string | null; onChange: (id: 
   );
 }
 
-function WordForm({ noteId }: { noteId: string | null }) {
+/** One word. Opened from a selection ("Flashcard"), it starts with that word and saves just the one card. */
+function WordForm({ noteId, initial }: { noteId: string | null; initial?: string }) {
   const { settings } = useVault();
   const lang = languageOf(settings.learning);
-  const [word, setWord] = useState("");
+  const [word, setWord] = useState(initial ?? "");
   const [typed, setTyped] = useState<string | null>(null);
   const [target, setTarget] = useState(noteId);
   const [added, setAdded] = useState(0);
@@ -103,15 +105,17 @@ function WordForm({ noteId }: { noteId: string | null }) {
           placeholder={found.status === "loading" ? "Looking it up…" : "What it means"}
           enterKeyHint="done"
           onChange={(e) => setTyped(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && save(true)}
+          onKeyDown={(e) => e.key === "Enter" && save(!initial)}
         />
       </label>
       {front !== word.trim() && word.trim() && <p className="add-hint">Saved as <b>{front}</b>, with its article.</p>}
       <NotePicker value={target} onChange={setTarget} />
       <div className="add-actions">
-        <button className="btn btn-lg" onClick={() => save(true)} disabled={!ready}>
-          Save &amp; add another
-        </button>
+        {!initial && (
+          <button className="btn btn-lg" onClick={() => save(true)} disabled={!ready}>
+            Save &amp; add another
+          </button>
+        )}
         <button className="btn btn-primary btn-lg" onClick={() => save(false)} disabled={!ready}>
           <Check size={17} /> Save
         </button>
@@ -170,23 +174,33 @@ export default function AddWord() {
   const router = useRouter();
   if (!addWord) return null;
   const list = addWord.mode === "list";
+  const picked = !list && addWord.word;
   return (
-    <Sheet open title={list ? "Paste a word list" : "Add a word"} onClose={close} className="add-sheet">
-      {list ? <ListForm key="list" noteId={addWord.noteId} /> : <WordForm key="word" noteId={addWord.noteId} />}
-      <div className="add-other">
-        <button onClick={() => setUI({ addWord: { ...addWord, mode: list ? "word" : "list" } })}>
-          <ListPlus size={16} /> {list ? "Add one word" : "Paste a word list"}
-        </button>
-        <button
-          onClick={() => {
-            close();
-            setUI({ pendingRename: vault.createNote() });
-            router.push("/");
-          }}
-        >
-          <FilePlus2 size={16} /> New note
-        </button>
-      </div>
+    <Sheet open title={list ? "Paste a word list" : picked ? "New flashcard" : "Add a word"} onClose={close} className="add-sheet">
+      {list ? (
+        <ListForm key="list" noteId={addWord.noteId} />
+      ) : (
+        <WordForm key={`word:${addWord.word ?? ""}`} noteId={addWord.noteId} initial={addWord.word} />
+      )}
+      {!picked && (
+        <div className="add-other">
+          <button onClick={() => setUI({ addWord: { ...addWord, mode: list ? "word" : "list" } })}>
+            <ListPlus size={16} /> {list ? "Add one word" : "Paste a list"}
+          </button>
+          <button onClick={() => setUI({ addWord: null, scan: { noteId: addWord.noteId } })}>
+            <ScanText size={16} /> Scan a page
+          </button>
+          <button
+            onClick={() => {
+              close();
+              setUI({ pendingRename: vault.createNote() });
+              router.push("/");
+            }}
+          >
+            <FilePlus2 size={16} /> New note
+          </button>
+        </div>
+      )}
     </Sheet>
   );
 }

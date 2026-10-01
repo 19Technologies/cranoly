@@ -1,6 +1,6 @@
 // Cranoly service worker: makes the installed app work offline.
 // Hashed build assets are cached forever; pages are network-first with a cached fallback.
-const CACHE = "cranoly-v3";
+const CACHE = "cranoly-v4";
 const SHELL = ["/", "/home", "/notes", "/search", "/graph", "/flashcards", "/flashcards/study", "/settings", "/manifest.webmanifest", "/icon.png"];
 
 self.addEventListener("install", (event) => {
@@ -16,7 +16,8 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches
       .keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      // Only old copies of the app itself. Downloaded voices ("cranoly-voices-…") and scan languages stay.
+      .then((keys) => Promise.all(keys.filter((k) => /^(graphite|cranoly)-v\d+$/.test(k) && k !== CACHE).map((k) => caches.delete(k))))
       .then(() => self.clients.claim()),
   );
 });

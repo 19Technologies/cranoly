@@ -11,7 +11,7 @@ import { say } from "@/lib/smart";
 import { haptic } from "@/lib/native";
 import MarkdownView from "@/components/MarkdownView";
 import { Card, inDeck } from "@/lib/cards";
-import { formatDuration, fromRecentNotes, notSeenLately, shuffled } from "@/lib/study";
+import { cardLanguage, forLanguage, formatDuration, fromRecentNotes, notSeenLately, shuffled } from "@/lib/study";
 import { parseDay, useToday } from "@/lib/useToday";
 import { titleOf } from "@/lib/vault";
 import { getVault, useCards, useVault, vault } from "@/lib/store";
@@ -164,7 +164,7 @@ function Session({ cards: initial, title, shuffle, startWithBack, limit }: {
 
   const source = notes[card.noteId];
   // Card fronts are in the language being learned, answers in your own (except fill-the-gap cards).
-  const learning = languageOf(settings.learning);
+  const learning = languageOf(cardLanguage(card, notes, settings));
   const own = card.kind === "cloze" ? learning : languageOf(settings.native);
   const frontLang = reversed ? own : learning;
   const backLang = reversed ? learning : own;
@@ -298,23 +298,25 @@ function Session({ cards: initial, title, shuffle, startWithBack, limit }: {
 function StudyRoute() {
   const params = useSearchParams();
   const { notes, settings } = useVault();
-  const all = useCards();
+  const every = useCards();
   const deck = params.get("deck");
   const noteId = params.get("note");
   const shuffleParam = params.get("shuffle") === "1";
   const smart = params.get("smart");
   const limit = Number(params.get("limit")) || 0;
+  const lang = params.get("lang");
   const today = useToday();
   // Smart decks are worked out from the moment you start, so studying doesn't shrink the deck under you.
   const [seenAtStart] = useState(() => getVault().seen);
 
   const { cards, title } = useMemo(() => {
+    const all = lang ? forLanguage(every, notes, settings, lang) : every;
     if (smart === "stale") return { cards: today ? notSeenLately(all, seenAtStart, parseDay(today)) : [], title: "Not seen lately" };
     if (smart === "recent") return { cards: today ? fromRecentNotes(all, notes, parseDay(today)) : [], title: "From this week’s notes" };
     if (noteId) return { cards: all.filter((c) => c.noteId === noteId), title: notes[noteId] ? titleOf(notes[noteId].path) : "Note" };
     if (deck) return { cards: all.filter((c) => inDeck(c, deck)), title: deck.split("/").join(" / ") };
     return { cards: all, title: "All cards" };
-  }, [all, deck, noteId, notes, smart, today, seenAtStart]);
+  }, [every, lang, deck, noteId, notes, settings, smart, today, seenAtStart]);
 
   if (smart && !today) return null;
 
@@ -332,7 +334,7 @@ function StudyRoute() {
 
   return (
     <Session
-      key={`${deck}|${noteId}|${shuffleParam}|${smart}|${limit}`}
+      key={`${deck}|${noteId}|${shuffleParam}|${smart}|${limit}|${lang}`}
       cards={cards}
       limit={limit}
       title={limit ? "Practice" : title}

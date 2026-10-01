@@ -2,14 +2,14 @@
 
 import { useSyncExternalStore, type ReactNode } from "react";
 import {
-  BookA, Bold, ChevronDown, Hash, Heading2, IndentDecrease, IndentIncrease, Italic, Link2, ListChecks, Redo2, SpellCheck,
-  Undo2, Volume2,
+  BookA, Bold, ChevronDown, Hash, Heading2, IndentDecrease, IndentIncrease, Italic, Layers, Link2, ListChecks, Redo2,
+  SpellCheck, Undo2, Volume2,
 } from "lucide-react";
 import { useUI } from "@/lib/ui";
 import type { EditorView } from "@codemirror/view";
 import { redo, undo } from "@codemirror/commands";
 import { activeEditor, indent, insertText, toggleLinePrefix, wrap } from "@/lib/cm";
-import { checkWriting, explain, hear } from "@/lib/smart";
+import { checkWriting, explain, flashcard, hear } from "@/lib/smart";
 
 /** Height of the on-screen keyboard, from the visual viewport (0 when closed). */
 function subscribe(onChange: () => void) {
@@ -26,10 +26,10 @@ const keyboardInset = () => {
   return vv ? Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop)) : 0;
 };
 
-function Tool({ label, onPress, children }: { label: string; onPress: (view: EditorView) => void; children: ReactNode }) {
+function Tool({ label, onPress, wide, children }: { label: string; onPress: (view: EditorView) => void; wide?: boolean; children: ReactNode }) {
   return (
     <button
-      className="tool"
+      className={wide ? "tool tool-wide" : "tool"}
       aria-label={label}
       title={label}
       // Keep focus (and the keyboard) in the editor.
@@ -53,6 +53,14 @@ export default function EditToolbar() {
   return (
     <div className="edit-toolbar" style={{ bottom: inset }} role="toolbar" aria-label="Formatting" data-no-swipe>
       <div className="edit-toolbar-scroll">
+        {/* On the selected word, or the word next to the caret. */}
+        <Tool label="Flashcard" onPress={flashcard} wide>
+          <Layers size={17} /> Flashcard
+        </Tool>
+        <Tool label="Link" onPress={(v) => wrap(v, "[[", "]]")} wide>
+          <Link2 size={17} /> Link
+        </Tool>
+        <span className="tool-sep" />
         <Tool label="Undo" onPress={(v) => { undo(v); v.focus(); }}>
           <Undo2 size={18} />
         </Tool>
@@ -70,10 +78,7 @@ export default function EditToolbar() {
           <SpellCheck size={18} />
         </Tool>
         <span className="tool-sep" />
-        <Tool label="Link to a note" onPress={(v) => wrap(v, "[[", "]]")}>
-          <Link2 size={18} />
-        </Tool>
-        <Tool label="Flashcard ( :: )" onPress={(v) => insertText(v, " :: ")}>
+        <Tool label="Type a card ( :: )" onPress={(v) => insertText(v, " :: ")}>
           <span className="tool-text">::</span>
         </Tool>
         <Tool label="Tag" onPress={(v) => insertText(v, "#")}>

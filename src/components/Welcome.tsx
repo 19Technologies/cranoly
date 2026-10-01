@@ -1,53 +1,114 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Check, Loader2, Plus, Volume2 } from "lucide-react";
-import { useVault, vault } from "@/lib/store";
+import { ArrowRight, Check, Download, Layers, Link2, Loader2, Plus, Volume2, Wifi } from "lucide-react";
+import Logo from "./Logo";
+import VoiceList from "./Voices";
+import { toast, useVault, vault } from "@/lib/store";
 import { LANGUAGES, languageOf } from "@/lib/languages";
 import { useMeaning } from "@/lib/useMeaning";
 import { haptic } from "@/lib/native";
 import { say } from "@/lib/smart";
+import { downloadSize, downloadVoice, useVoices, voiceReady } from "@/lib/voices";
 
-const HELLO: Record<string, string> = {
-  de: "Hallo", es: "Hola", fr: "Bonjour", en: "Hello", it: "Ciao", pt: "Olá", nl: "Hallo", sv: "Hej", pl: "Cześć",
-  ru: "Привет", uk: "Привіт", ja: "こんにちは", zh: "你好", ko: "안녕하세요", ar: "مرحبا", tr: "Merhaba", sw: "Jambo",
-};
 const FEATURED = ["de", "es", "fr", "en", "it", "pt", "ja", "sw"];
 
 function Dots({ step }: { step: number }) {
   return (
-    <div className="wc-dots" aria-label={`Step ${step + 1} of 3`}>
-      {[0, 1, 2].map((i) => (
+    <div className="wc-dots" aria-label={`Step ${step + 1} of 4`}>
+      {[0, 1, 2, 3].map((i) => (
         <i key={i} className={i <= step ? "is-on" : ""} />
       ))}
     </div>
   );
 }
 
-/** Step 1: pick the language. One tap moves on. */
-function PickLanguage({ onPick }: { onPick: () => void }) {
+/** "German", "German and Spanish", "German, Spanish and French". */
+const listOf = (names: string[]) => (names.length < 2 ? names.join("") : `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`);
+
+/** What Cranoly is, in three lines. */
+function Intro({ onNext, onRestored }: { onNext: () => void; onRestored: () => void }) {
+  const file = useRef<HTMLInputElement>(null);
+  return (
+    <>
+      <div className="wc-hero" aria-hidden>
+        <span className="wc-mini is-sky">Hund <i>→</i> dog</span>
+        <span className="wc-mini is-sun">la casa <i>→</i> the house</span>
+        <span className="wc-mini is-lilac">merci <i>→</i> thank you</span>
+      </div>
+      <h1 className="wc-title">Your language notebook.</h1>
+      <ul className="wc-features">
+        <li>
+          <span className="wc-icon"><Plus size={19} /></span>
+          <span><b>Add a word in seconds</b><small>Type it. The meaning fills itself in.</small></span>
+        </li>
+        <li>
+          <span className="wc-icon"><Volume2 size={19} /></span>
+          <span><b>Hear how it sounds</b><small>Natural voices that work offline.</small></span>
+        </li>
+        <li>
+          <span className="wc-icon"><Layers size={19} /></span>
+          <span><b>Practise in a minute</b><small>Tap to flip. Swipe for the next one.</small></span>
+        </li>
+      </ul>
+      <div className="wc-foot">
+        <button className="btn btn-primary btn-lg" onClick={onNext}>
+          Get started <ArrowRight size={17} />
+        </button>
+      </div>
+      <p className="wc-restore">
+        Moving from another phone? <button onClick={() => file.current?.click()}>Restore a backup</button>
+      </p>
+      <input
+        ref={file}
+        type="file"
+        accept="application/json,.json"
+        hidden
+        onChange={async (e) => {
+          const picked = e.target.files?.[0];
+          e.target.value = "";
+          if (!picked) return;
+          const err = vault.importJSON(await picked.text());
+          if (err) toast(err);
+          else onRestored();
+        }}
+      />
+    </>
+  );
+}
+
+/** Which languages: one or more. The first one picked is the main one. */
+function Languages({ onNext }: { onNext: (picked: string[]) => void }) {
   const { settings } = useVault();
-  const pick = (code: string) => {
-    vault.updateSettings({ learning: code });
-    onPick();
+  const [picked, setPicked] = useState<string[]>([]);
+  const toggle = (code: string) => {
+    haptic();
+    setPicked((p) => (p.includes(code) ? p.filter((c) => c !== code) : [...p, code]));
   };
+  const shown = [...FEATURED, ...picked.filter((c) => !FEATURED.includes(c))];
   return (
     <>
       <h1 className="wc-title">What are you learning?</h1>
-      <div className="wc-langs">
-        {FEATURED.map((code) => (
-          <button key={code} className="wc-lang" onClick={() => pick(code)}>
-            <b>{languageOf(code).name}</b>
-            <span>{HELLO[code]}</span>
-          </button>
-        ))}
+      <p className="wc-text">Pick one or more.</p>
+      <div className="wc-langs" role="group" aria-label="Languages">
+        {shown.map((code) => {
+          const lang = languageOf(code);
+          const on = picked.includes(code);
+          return (
+            <button key={code} className={`wc-lang${on ? " is-on" : ""}`} aria-pressed={on} onClick={() => toggle(code)}>
+              <b>{lang.name}</b>
+              <span lang={code}>{lang.hello}</span>
+              {on && <Check size={18} className="wc-lang-check" aria-hidden />}
+            </button>
+          );
+        })}
       </div>
       <label className="wc-more">
         <span>Something else?</span>
-        <select value="" onChange={(e) => e.target.value && pick(e.target.value)}>
+        <select value="" onChange={(e) => e.target.value && toggle(e.target.value)}>
           <option value="">More languages…</option>
-          {LANGUAGES.filter((l) => !FEATURED.includes(l.code)).map((l) => (
+          {LANGUAGES.filter((l) => !shown.includes(l.code)).map((l) => (
             <option key={l.code} value={l.code}>
               {l.name}
             </option>
@@ -64,11 +125,68 @@ function PickLanguage({ onPick }: { onPick: () => void }) {
           ))}
         </select>
       </label>
+      <div className="wc-foot">
+        <button
+          className="btn btn-primary btn-lg"
+          disabled={!picked.length}
+          onClick={() => {
+            vault.updateSettings({ learning: picked[0], languages: picked });
+            onNext(picked);
+          }}
+        >
+          Continue <ArrowRight size={17} />
+        </button>
+      </div>
     </>
   );
 }
 
-/** Step 2: add a first word. The meaning fills itself in. */
+/** Download a natural voice for each language, right here. It carries on in the background. */
+function Voices({ onNext }: { onNext: () => void }) {
+  const { settings } = useVault();
+  const voices = useVoices();
+  const codes = settings.languages.filter((c) => languageOf(c).model);
+  const started = codes.some((c) => (voices[c]?.status ?? "none") !== "none");
+  const mb = downloadSize(codes);
+  const connection = (navigator as Navigator & { connection?: { type?: string; saveData?: boolean } }).connection;
+  const metered = connection?.type === "cellular" || connection?.saveData === true;
+  return (
+    <>
+      <h1 className="wc-title">Hear it spoken.</h1>
+      <p className="wc-text">
+        {codes.length > 1 ? "Get natural" : "Get a natural"} {listOf(codes.map((c) => languageOf(c).name))}{" "}
+        {codes.length > 1 ? "voices. They’re saved in Cranoly and work" : "voice. It’s saved in Cranoly and works"} offline.
+      </p>
+      <VoiceList codes={codes} offer={false} />
+      {!started && metered && (
+        <p className="wc-fine wc-note">
+          <Wifi size={14} /> You’re on mobile data. This is a {mb} MB download.
+        </p>
+      )}
+      <div className="wc-foot">
+        {started ? (
+          <button className="btn btn-primary btn-lg" onClick={onNext}>
+            Continue <ArrowRight size={17} />
+          </button>
+        ) : (
+          <>
+            <button className="btn btn-ghost btn-lg" onClick={onNext}>
+              Not now
+            </button>
+            <button className="btn btn-primary btn-lg" onClick={() => codes.forEach((c) => void downloadVoice(c).catch(() => {}))}>
+              <Download size={17} /> Download · {mb} MB
+            </button>
+          </>
+        )}
+      </div>
+      <p className="wc-fine wc-center">
+        {started ? "It keeps downloading while you carry on." : "You can add voices later in Settings."}
+      </p>
+    </>
+  );
+}
+
+/** Add a first word. The meaning fills itself in. */
 function FirstWord({ onAdded, onSkip }: { onAdded: (front: string, back: string) => void; onSkip: () => void }) {
   const { settings } = useVault();
   const lang = languageOf(settings.learning);
@@ -135,10 +253,30 @@ function FirstWord({ onAdded, onSkip }: { onAdded: (front: string, back: string)
   );
 }
 
-/** Step 3: flip the card you just made. */
+/** The one thing to know about notes: select a word, then Flashcard or Link. No syntax to learn. */
+function NotesTip({ word }: { word: string }) {
+  return (
+    <div className="wc-howto">
+      <span className="wc-howto-demo" aria-hidden>
+        <span className="wc-howto-bar">
+          <span><Layers size={11} /> Flashcard</span>
+          <span><Link2 size={11} /> Link</span>
+        </span>
+        <mark>{word}</mark>
+      </span>
+      <p>
+        <b>In your notes,</b> select any word to make it a flashcard or a link to another note.
+      </p>
+    </div>
+  );
+}
+
+/** Flip the card you just made. */
 function TryIt({ card, onDone }: { card: { front: string; back: string } | null; onDone: () => void }) {
   const { settings } = useVault();
+  const voices = useVoices();
   const lang = languageOf(settings.learning);
+  const voice = voices[lang.code];
   const [flipped, setFlipped] = useState(false);
   if (!card) {
     return (
@@ -149,6 +287,7 @@ function TryIt({ card, onDone }: { card: { front: string; back: string } | null;
           <li><b>Practice</b> shows your cards. Tap to flip, swipe for the next.</li>
           <li><b>Notes</b> are for everything else: lessons, texts, ideas.</li>
         </ul>
+        <NotesTip word={languageOf(settings.learning).starter?.[0] ?? "word"} />
         <div className="wc-foot">
           <button className="btn btn-primary btn-lg" onClick={onDone}>
             Start using Cranoly <ArrowRight size={17} />
@@ -176,7 +315,9 @@ function TryIt({ card, onDone }: { card: { front: string; back: string } | null;
       </button>
       <button className="wc-say" onClick={() => say(card.front, lang)}>
         <Volume2 size={16} /> Hear it
+        {voice?.status === "downloading" && <small>· voice {Math.round(voice.progress * 100)}%</small>}
       </button>
+      {flipped && <NotesTip word={card.front.split(" ").at(-1) ?? card.front} />}
       <div className="wc-foot">
         <button className="btn btn-primary btn-lg" onClick={onDone} disabled={!flipped}>
           <Check size={17} /> Start using Cranoly
@@ -198,30 +339,42 @@ function Flow() {
     <div className="wc-layer" data-no-swipe role="dialog" aria-modal="true" aria-label="Welcome to Cranoly">
       <div className="wc-card-panel">
         <div className="wc-top">
-          <Dots step={step} />
-          <button className="wc-skip" onClick={finish}>
-            Skip
-          </button>
+          {step === 0 ? (
+            <span className="wc-brand">
+              <Logo size={30} /> Cranoly
+            </span>
+          ) : (
+            <>
+              <Dots step={step - 1} />
+              <button className="wc-skip" onClick={finish}>
+                Skip
+              </button>
+            </>
+          )}
         </div>
         <div className="wc-body" key={step}>
-          {step === 0 && <PickLanguage onPick={() => setStep(1)} />}
+          {step === 0 && <Intro onNext={() => setStep(1)} onRestored={finish} />}
           {step === 1 && (
+            <Languages onNext={(picked) => setStep(picked.some((c) => languageOf(c).model && !voiceReady(c)) ? 2 : 3)} />
+          )}
+          {step === 2 && <Voices onNext={() => setStep(3)} />}
+          {step === 3 && (
             <FirstWord
               onAdded={(front, back) => {
                 setCard({ front, back });
-                setStep(2);
+                setStep(4);
               }}
-              onSkip={() => setStep(2)}
+              onSkip={() => setStep(4)}
             />
           )}
-          {step === 2 && <TryIt card={card} onDone={finish} />}
+          {step === 4 && <TryIt card={card} onDone={finish} />}
         </div>
       </div>
     </div>
   );
 }
 
-/** First launch: language, first word, first card. Shown once. */
+/** First launch: what Cranoly is, your languages and their voices, a first word, a first card. Shown once. */
 export default function Welcome() {
   const { ready, settings } = useVault();
   return ready && !settings.onboarded ? <Flow /> : null;

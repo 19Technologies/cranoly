@@ -6,7 +6,8 @@ import { dismissToast, getVault, toast, vault } from "./store";
 import { languageOf } from "./languages";
 import { GrammarError, MAX_CHECK, check } from "./grammar";
 import { setIssues } from "./issues";
-import { speak } from "./speech";
+import { speak, speakable } from "./speech";
+import { downloadSize, downloadVoice, speakNatural, unlockAudio, voiceReady, voiceStatus } from "./voices";
 import { setUI } from "./ui";
 import { toCards, wordListSize } from "./words";
 
@@ -42,9 +43,40 @@ export function explain(view: EditorView) {
   setUI({ explain: { word, noteId: getVault().workspace.active } });
 }
 
-/** Say something in the language being learned. */
+/** "Flashcard": the add-a-word sheet with the selected word, so its meaning fills itself in. Saves to this note. */
+export function flashcard(view: EditorView) {
+  const word = selectionOrWord(view)?.text.replace(/\[\[|\]\]|[*=_`]/g, "").replace(/\s+/g, " ").trim().slice(0, 80);
+  setUI({ addWord: { noteId: getVault().workspace.active, mode: "word", word } });
+}
+
+/**
+ * Say something in the language being learned: with its downloaded natural voice if there is
+ * one, else the device's own voice, else offer to download a voice right here in the app.
+ */
 export function say(text: string, lang = learning()) {
-  if (!speak(text, lang.voice)) toast(`This device has no ${lang.name} voice. Add one in your system settings.`);
+  const words = speakable(text);
+  if (!words) return;
+  const fallback = () => {
+    if (speak(words, lang.voice)) return;
+    const status = voiceStatus(lang.code);
+    if (status === "ready") toast("Couldn’t play that. Try again.");
+    else if (status === "downloading" || status === "waiting") toast(`The ${lang.name} voice is still downloading.`);
+    else if (lang.model) {
+      toast(`No ${lang.name} voice yet.`, {
+        label: `Download (${downloadSize([lang.code])} MB)`,
+        run: () => {
+          toast(`Downloading the ${lang.name} voice…`);
+          downloadVoice(lang.code).then(
+            () => toast(`${lang.name} voice ready`),
+            () => toast(`Couldn’t download the ${lang.name} voice`),
+          );
+        },
+      });
+    } else toast(`There’s no ${lang.name} voice on this device yet.`);
+  };
+  if (!voiceReady(lang.code)) return fallback();
+  unlockAudio(); // must happen during the tap
+  speakNatural(words, lang.code).catch(fallback);
 }
 
 export function hear(view: EditorView) {

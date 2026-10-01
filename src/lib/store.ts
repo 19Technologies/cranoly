@@ -17,9 +17,11 @@ import {
   saveState,
   emptyState,
   titleOf,
+  withLanguages,
 } from "./vault";
 import { VaultIndex, buildIndex, rewriteLinks } from "./links";
 import { Card, allCards } from "./cards";
+import { languageOf } from "./languages";
 
 let state: VaultState = EMPTY_STATE;
 let loaded = false;
@@ -158,8 +160,21 @@ function withNote(s: VaultState, note: Note): VaultState {
   return { ...s, notes: { ...s.notes, [note.id]: note } };
 }
 
+/** Is the note at `path` in `folder` (or a folder inside it)? Every note is in "". */
+export const inFolder = (path: string, folder: string) => {
+  const f = folderOf(path);
+  return !folder || f === folder || f.startsWith(folder + "/");
+};
+
 /** Where words added with ＋ go, unless you pick another note. */
 export const WORDS_NOTE = "My words";
+
+/** "My words", or one note per language ("Spanish words") once you learn more than one. */
+export function wordsNoteTitle(settings: Settings = state.settings) {
+  const own = `${languageOf(settings.learning).name} words`;
+  const exists = Object.values(state.notes).some((n) => n.path === own);
+  return exists || settings.languages.length > 1 ? own : WORDS_NOTE;
+}
 
 export const vault = {
   openNote(id: string, opts: { newTab?: boolean } = {}) {
@@ -176,9 +191,11 @@ export const vault = {
       const folder = folderOf(s.notes[id].path);
       const parents = folder ? folder.split("/").map((_, i, a) => a.slice(0, i + 1).join("/")) : [];
       const expanded = [...new Set([...ws.expanded, ...parents])];
+      // The notes list follows: a note from another folder switches the list to that folder.
+      const shown = inFolder(s.notes[id].path, ws.folder) ? ws.folder : folder;
       return {
         ...s,
-        workspace: { ...ws, tabs, active: id, history, historyIndex: history.length - 1, expanded },
+        workspace: { ...ws, tabs, active: id, history, historyIndex: history.length - 1, expanded, folder: shown },
       };
     });
   },
@@ -265,9 +282,13 @@ export const vault = {
       const notes = { ...s.notes };
       delete notes[id];
       const ws = s.workspace;
-      const i = ws.tabs.indexOf(id);
       const tabs = ws.tabs.filter((t) => t !== id);
-      const active = ws.active === id ? tabs[Math.max(0, i - 1)] ?? null : ws.active;
+      // As in Apple Notes: the next note in the list (pinned first, then newest) takes its place.
+      const list = Object.values(s.notes)
+        .filter((n) => inFolder(n.path, ws.folder))
+        .sort((a, b) => Number(!!b.pinned) - Number(!!a.pinned) || b.updated - a.updated);
+      const at = list.findIndex((n) => n.id === id);
+      const active = ws.active === id ? (list[at + 1] ?? list[at - 1])?.id ?? null : ws.active;
       return { ...s, notes, workspace: { ...ws, tabs, active } };
     });
     toast(`Deleted "${titleOf(note.path)}"`, {
@@ -309,7 +330,7 @@ export const vault = {
         ...s,
         notes,
         folders: s.folders.map(move),
-        workspace: { ...s.workspace, expanded: s.workspace.expanded.map(move) },
+        workspace: { ...s.workspace, expanded: s.workspace.expanded.map(move), folder: move(s.workspace.folder) },
       };
     });
     return null;
@@ -327,13 +348,37 @@ export const vault = {
         ...s,
         notes,
         folders: s.folders.filter((f) => !inside(f)),
-        workspace: { ...ws, tabs, active: ws.active && notes[ws.active] ? ws.active : tabs[0] ?? null },
+        workspace: {
+          ...ws,
+          tabs,
+          active: ws.active && notes[ws.active] ? ws.active : tabs[0] ?? null,
+          folder: inside(ws.folder) ? "" : ws.folder,
+        },
       };
     });
     toast(`Deleted "${titleOf(path)}"${count ? ` and ${count} note${count === 1 ? "" : "s"}` : ""}`, {
       label: "Undo",
       run: () => set(() => before),
     });
+  },
+
+  togglePin(id: string) {
+    set((s) => (s.notes[id] ? withNote(s, { ...s.notes[id], pinned: !s.notes[id].pinned }) : s));
+  },
+
+  /**
+   * Which folder the notes list shows ("" for all notes). With `select`, the open note moves to
+   * that folder's newest note too (or none, for an empty folder), as in Apple Notes.
+   */
+  showFolder(folder: string, opts: { select?: boolean } = {}) {
+    set((s) => ({ ...s, workspace: { ...s.workspace, folder } }));
+    const active = state.workspace.active ? state.notes[state.workspace.active] : undefined;
+    if (!opts.select || (active && inFolder(active.path, folder))) return;
+    const first = Object.values(state.notes)
+      .filter((n) => inFolder(n.path, folder))
+      .sort((a, b) => Number(!!b.pinned) - Number(!!a.pinned) || b.updated - a.updated)[0];
+    if (first) vault.openNote(first.id);
+    else set((s) => ({ ...s, workspace: { ...s.workspace, active: null } }));
   },
 
   moveNote(id: string, folder: string) {
@@ -361,7 +406,14 @@ export const vault = {
   },
 
   updateSettings(patch: Partial<Settings>) {
-    set((s) => ({ ...s, settings: { ...s.settings, ...patch } }));
+    const before = state.settings.languages;
+    set((s) => ({ ...s, settings: withLanguages({ ...s.settings, ...patch }) }));
+    // Starting a second language: every word so far was in the first one, so name their note after it.
+    if (before.length === 1 && state.settings.languages.length > 1) {
+      const words = Object.values(state.notes).find((n) => n.path === WORDS_NOTE);
+      const title = `${languageOf(before[0]).name} words`;
+      if (words && !Object.values(state.notes).some((n) => n.path === title)) vault.renameNote(words.id, title);
+    }
   },
 
   /** Remember when a card's answer was last revealed. */
@@ -379,8 +431,8 @@ export const vault = {
   },
 
   /**
-   * Add a flashcard without writing any syntax. It goes to `noteId`, or to the "My words" note
-   * (created on first use). Returns the note it was saved to.
+   * Add a flashcard without writing any syntax. It goes to `noteId`, or to the words note for the
+   * language being learned (created on first use). Returns the note it was saved to.
    */
   addCard(front: string, back: string, noteId?: string | null) {
     return vault.addCards([[front, back]], noteId);
@@ -389,8 +441,9 @@ export const vault = {
   /** Several cards at once (a pasted word list), into one note. */
   addCards(pairs: Array<[string, string]>, noteId?: string | null) {
     const clean = (t: string) => t.replace(/\s*:{2,}\s*/g, " ").replace(/\s+/g, " ").trim();
-    let id = noteId && state.notes[noteId] ? noteId : Object.values(state.notes).find((n) => n.path === WORDS_NOTE)?.id;
-    if (!id) id = vault.createNote({ title: WORDS_NOTE, content: "", open: false });
+    const title = wordsNoteTitle();
+    let id = noteId && state.notes[noteId] ? noteId : Object.values(state.notes).find((n) => n.path === title)?.id;
+    if (!id) id = vault.createNote({ title, content: "", open: false });
     vault.appendLine(id, pairs.map(([f, b]) => `${clean(f)} :: ${clean(b)}`).join("\n"));
     return id;
   },

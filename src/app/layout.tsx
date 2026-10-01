@@ -1,11 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Bricolage_Grotesque, Geist_Mono, Instrument_Sans } from "next/font/google";
+import { Fraunces, Geist_Mono, Instrument_Sans } from "next/font/google";
 import AppShell from "@/components/AppShell";
 import ServiceWorker from "@/components/ServiceWorker";
 import "./globals.css";
 
-// Tutora brand type: Bricolage Grotesque for display, Instrument Sans for text.
-const display = Bricolage_Grotesque({ subsets: ["latin", "latin-ext"], variable: "--font-display", axes: ["opsz"] });
+// Cranoly type: Fraunces (soft, variable serif) for display, Instrument Sans for text.
+const display = Fraunces({ subsets: ["latin", "latin-ext"], variable: "--font-display", axes: ["opsz", "SOFT", "WONK"] });
 const ui = Instrument_Sans({ subsets: ["latin", "latin-ext"], variable: "--font-ui" });
 const mono = Geist_Mono({ subsets: ["latin", "latin-ext"], variable: "--font-mono" });
 
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   title: "Cranoly",
   applicationName: "Cranoly",
   description: "A linked-notes vault for language learning, with flashcards written right inside your notes.",
-  appleWebApp: { capable: true, title: "Graphite", statusBarStyle: "black-translucent" },
+  appleWebApp: { capable: true, title: "Cranoly", statusBarStyle: "black-translucent" },
   formatDetection: { telephone: false },
 };
 

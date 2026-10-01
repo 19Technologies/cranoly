@@ -118,6 +118,7 @@ function WikiLink({ target, children }: { target: string; children: ReactNode })
 
 function TagLink({ tag, children }: { tag: string; children: ReactNode }) {
   const { interactive } = useContext(MarkdownCtx);
+  const router = useRouter();
   if (!interactive) return <span className="tag" data-tint={tintFor(tag)}>{children}</span>;
   return (
     <a
@@ -127,6 +128,7 @@ function TagLink({ tag, children }: { tag: string; children: ReactNode }) {
       onClick={(e) => {
         e.preventDefault();
         openSearch(`#${tag}`);
+        router.push("/search");
       }}
     >
       {children}

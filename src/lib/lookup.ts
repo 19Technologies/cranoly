@@ -30,6 +30,8 @@ const cache = new Map<string, Promise<Lookup | null>>();
 const ENTITIES: Record<string, string> = { amp: "&", lt: "<", gt: ">", quot: '"', "#39": "'", nbsp: " " };
 function text(html: string) {
   return html
+    // Some definitions carry their template's CSS inline ("house", "water"): drop it with its tags.
+    .replace(/<(style|script)\b[^>]*>[\s\S]*?<\/\1>/gi, "")
     .replace(/<[^>]+>/g, "")
     .replace(/&(amp|lt|gt|quot|#39|nbsp);/g, (_m, e: string) => ENTITIES[e])
     .replace(/&#(\d+);/g, (_m, n: string) => String.fromCharCode(Number(n)))

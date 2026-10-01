@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { ArrowRight, Flame, Play, Plus, Settings, Volume2 } from "lucide-react";
 import { useCards, useVault, vault } from "@/lib/store";
 import { languageOf } from "@/lib/languages";
-import { notSeenLately, streak } from "@/lib/study";
+import { forLanguage, notSeenLately, streak } from "@/lib/study";
 import { parseDay, useHour, useToday } from "@/lib/useToday";
 import { friendlyCard, plainLine } from "@/lib/links";
 import { say } from "@/lib/smart";
@@ -19,7 +19,9 @@ const hash = (s: string) => [...s].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >
 export default function HomePage() {
   const router = useRouter();
   const { notes, settings, activity, seen, workspace } = useVault();
-  const cards = useCards();
+  const every = useCards();
+  const cards = useMemo(() => forLanguage(every, notes, settings), [every, notes, settings]);
+  const several = settings.languages.length > 1;
   const today = useToday();
   const hour = useHour();
   const [revealed, setRevealed] = useState(false);
@@ -51,7 +53,23 @@ export default function HomePage() {
     <div className="page home">
       <header className="home-head">
         <div>
-          <p className="home-lang">{lang.name}</p>
+          {several ? (
+            <div className="home-langs" role="radiogroup" aria-label="Language">
+              {settings.languages.map((c) => (
+                <button
+                  key={c}
+                  role="radio"
+                  aria-checked={c === settings.learning}
+                  className={c === settings.learning ? "is-on" : ""}
+                  onClick={() => vault.updateSettings({ learning: c })}
+                >
+                  {languageOf(c).name}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <p className="home-lang">{lang.name}</p>
+          )}
           <h1>{greeting}!</h1>
         </div>
         <Link href="/settings" className="icon-btn home-gear" aria-label="Settings">
@@ -68,7 +86,7 @@ export default function HomePage() {
             </p>
           </div>
           <Link
-            href={stale.length ? "/flashcards/study?smart=stale&limit=10" : "/flashcards/study?shuffle=1&limit=10"}
+            href={`/flashcards/study?${stale.length ? "smart=stale" : "shuffle=1"}&limit=10${several ? `&lang=${settings.learning}` : ""}`}
             className="btn btn-primary btn-lg"
           >
             <Play size={17} /> Start

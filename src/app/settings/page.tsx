@@ -1,11 +1,13 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Download, ClipboardCopy, GraduationCap, Upload, RotateCcw, Smartphone, Sparkles, Share, Sun, Moon, MonitorSmartphone } from "lucide-react";
+import { Download, ClipboardCopy, GraduationCap, Upload, RotateCcw, Smartphone, Sparkles, Share, Sun, Moon, MonitorSmartphone, X } from "lucide-react";
+import VoiceList from "@/components/Voices";
 import { download } from "@/components/CommandPalette";
 import { toast, useVault, vault } from "@/lib/store";
 import type { Settings } from "@/lib/vault";
 import { LANGUAGES, languageOf } from "@/lib/languages";
+import { ENGINE_MB, downloadVoice, useVoices } from "@/lib/voices";
 import { setUI, useUI } from "@/lib/ui";
 
 function Appearance() {
@@ -40,6 +42,8 @@ function Appearance() {
 function LanguageSettings() {
   const { settings } = useVault();
   const learning = languageOf(settings.learning);
+  const others = settings.languages.filter((c) => c !== settings.learning);
+  const addable = LANGUAGES.filter((l) => !settings.languages.includes(l.code));
   const picker = (label: string, field: "learning" | "native") => (
     <label className="field">
       <span>{label}</span>
@@ -54,13 +58,47 @@ function LanguageSettings() {
   );
   return (
     <section className="card-panel">
-      <div className="card-panel-head"><h2>Language</h2></div>
+      <div className="card-panel-head"><h2>Languages</h2></div>
       <div className="field-row">
         {picker("I\u2019m learning", "learning")}
         {picker("I speak", "native")}
       </div>
+      <div className="lang-also">
+        <span>Also learning</span>
+        <div className="lang-chips">
+          {others.map((c) => (
+            <span key={c} className="lang-chip">
+              <button onClick={() => vault.updateSettings({ learning: c })} title="Switch to this language">
+                {languageOf(c).name}
+              </button>
+              <button
+                onClick={() => vault.updateSettings({ languages: settings.languages.filter((x) => x !== c) })}
+                aria-label={`Stop learning ${languageOf(c).name}`}
+              >
+                <X size={14} />
+              </button>
+            </span>
+          ))}
+          {addable.length > 0 && (
+            <select
+              className="lang-add"
+              value=""
+              aria-label="Add a language"
+              onChange={(e) => e.target.value && vault.updateSettings({ languages: [...settings.languages, e.target.value] })}
+            >
+              <option value="">＋ Add a language</option>
+              {addable.map((l) => (
+                <option key={l.code} value={l.code}>
+                  {l.name}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
+      </div>
       <p className="setting-note">
-        Used for pronunciation, Explain, Check my writing and new-word lists.
+        Used for pronunciation, Explain, Check my writing and new-word lists. With more than one language, each gets its
+        own words note and you can switch on Home.
         {!learning.grammar && ` Check my writing isn\u2019t available for ${learning.name} yet.`}
       </p>
       <Toggle
@@ -68,6 +106,39 @@ function LanguageSettings() {
         label="Online lookups"
         hint="Explain asks Wiktionary and Check asks LanguageTool. Only the word or text you chose is sent, and only when you tap. Everything else stays on this device."
       />
+    </section>
+  );
+}
+
+/** Natural voices: download, hear, remove. Also offered during onboarding and from "Hear it". */
+function VoiceSettings() {
+  const { settings } = useVault();
+  const voices = useVoices();
+  const has = (code: string) => (voices[code]?.status ?? "none") !== "none";
+  const codes = [...settings.languages, ...LANGUAGES.filter((l) => has(l.code) && !settings.languages.includes(l.code)).map((l) => l.code)];
+  const more = LANGUAGES.filter((l) => l.model && !codes.includes(l.code));
+  const engineNeeded = !LANGUAGES.some((l) => voices[l.code]?.status === "ready");
+  return (
+    <section className="card-panel" id="voices">
+      <div className="card-panel-head"><h2>Voices</h2></div>
+      <p className="setting-note">
+        Natural voices for <b>Hear it</b>. They&apos;re saved in Cranoly and work offline.
+        {engineNeeded && ` The first one also brings the speech engine (${ENGINE_MB} MB).`}
+      </p>
+      <VoiceList codes={codes} removable />
+      {more.length > 0 && (
+        <label className="field voice-more">
+          <span>Another language</span>
+          <select value="" onChange={(e) => e.target.value && void downloadVoice(e.target.value).catch(() => {})}>
+            <option value="">Download a voice…</option>
+            {more.map((l) => (
+              <option key={l.code} value={l.code}>
+                {l.name} · {l.model!.mb} MB
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
     </section>
   );
 }
@@ -158,6 +229,7 @@ export default function SettingsPage() {
 
       <Appearance />
       <LanguageSettings />
+      <VoiceSettings />
       <InstallApp />
 
       <section className="card-panel">

@@ -4,10 +4,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  ArrowLeft, ArrowRight, BookOpen, ClipboardCopy, Columns2, Command, GitFork, Layers, Link2, MoreHorizontal, MoreVertical,
-  ListPlus, PenLine, Sparkles, SpellCheck, TextCursorInput, Trash2,
+  BookOpen, ChevronLeft, ClipboardCopy, Columns2, Command, GitFork, Layers, Link2, MoreHorizontal, PanelRight, PenLine, Pin, PinOff,
+  Plus, ListPlus, ScanText, Sparkles, SpellCheck, SquarePen, TextCursorInput, Trash2,
 } from "lucide-react";
-import { Note, ViewMode, folderOf, titleOf } from "@/lib/vault";
+import { Note, ViewMode, titleOf } from "@/lib/vault";
 import { cardsOf, toast, useVault, vault } from "@/lib/store";
 import { setUI, useUI } from "@/lib/ui";
 import { focusEditor } from "@/lib/cm";
@@ -73,6 +73,13 @@ function InlineTitle({ note }: { note: Note }) {
       }}
     />
   );
+}
+
+/** "30 September 2026 at 14:02", as at the top of an Apple Note. */
+function edited(t: number) {
+  const d = new Date(t);
+  const day = d.toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" });
+  return `${day} at ${d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}`;
 }
 
 function NoteView({ note, mode }: { note: Note; mode: ViewMode }) {
@@ -147,6 +154,7 @@ function NoteView({ note, mode }: { note: Note; mode: ViewMode }) {
       </div>
       <article className="note">
         <header className="note-header">
+          <p className="note-date">{edited(note.updated)}</p>
           <InlineTitle note={note} />
           {cardCount > 0 && (
             <div className="note-meta">
@@ -206,6 +214,7 @@ function NoteMenu({ note, onClose }: { note: Note; onClose: () => void }) {
       {item(<PenLine size={16} />, "Editing view", setMode("edit"), mode === "edit" ? " is-current" : "")}
       <span className="only-wide-flex">{item(<Columns2 size={16} />, "Split: edit and preview", setMode("split"), mode === "split" ? " is-current" : "")}</span>
       <span className="menu-sep" />
+      {item(note.pinned ? <PinOff size={16} /> : <Pin size={16} />, note.pinned ? "Unpin note" : "Pin note", () => { onClose(); vault.togglePin(note.id); })}
       {item(<TextCursorInput size={16} />, "Rename…", () => { onClose(); setUI({ pendingRename: note.id }); })}
       {cards > 0 &&
         item(<Layers size={16} />, `Study ${cards} ${cards === 1 ? "card" : "cards"}`, () => { onClose(); router.push(`/flashcards/study?note=${note.id}`); })}
@@ -217,6 +226,7 @@ function NoteMenu({ note, onClose }: { note: Note; onClose: () => void }) {
       {item(<SpellCheck size={16} />, "Check my writing", () => { onClose(); withEditor(checkWriting); })}
       {item(<Sparkles size={16} />, "Find new words", () => { onClose(); withEditor(findNewWords); })}
       {item(<ListPlus size={16} />, "Turn word list into cards", () => { onClose(); withEditor((v) => makeCards(v)); })}
+      {item(<ScanText size={16} />, "Scan text into this note", () => { onClose(); setUI({ scan: { noteId: note.id } }); })}
       <span className="menu-sep" />
       {item(<ClipboardCopy size={16} />, "Copy note text", () => {
         navigator.clipboard?.writeText(note.content).then(() => toast("Copied to clipboard"), () => toast("Couldn't copy"));
@@ -228,55 +238,48 @@ function NoteMenu({ note, onClose }: { note: Note; onClose: () => void }) {
   );
 }
 
-/** Desktop view header: history arrows, breadcrumb, reading/editing toggle, more options. */
-function ViewHeader({ note, mode }: { note: Note; mode: ViewMode }) {
-  const { notes, workspace } = useVault();
+/** The note's toolbar on bigger screens: editing, quick tools, the links panel and more. */
+function NoteToolbar({ note, mode }: { note: Note; mode: ViewMode }) {
+  const router = useRouter();
+  const { workspace } = useVault();
   const [menu, setMenu] = useState<Anchor>(null);
-  const canBack = workspace.history.slice(0, workspace.historyIndex).some((id) => notes[id]);
-  const canForward = workspace.history.slice(workspace.historyIndex + 1).some((id) => notes[id]);
-  const folder = folderOf(note.path);
+  const tool = (label: string, icon: React.ReactNode, run: () => void, on = false) => (
+    <button className={`icon-btn${on ? " is-on" : ""}`} aria-label={label} title={label} onClick={run}>
+      {icon}
+    </button>
+  );
   return (
-    <div className="view-header">
-      <div className="view-header-nav">
-        <button className="icon-btn" disabled={!canBack} onClick={() => vault.go(-1)} aria-label="Navigate back" title="Navigate back">
-          <ArrowLeft size={17} />
-        </button>
-        <button className="icon-btn" disabled={!canForward} onClick={() => vault.go(1)} aria-label="Navigate forward" title="Navigate forward">
-          <ArrowRight size={17} />
-        </button>
-      </div>
-      <div className="view-header-title" title={note.path}>
-        {folder && (
-          <>
-            <span className="crumb">{folder.split("/").join(" / ")}</span>
-            <span className="crumb-sep">/</span>
-          </>
-        )}
-        <button className="crumb-title" onClick={() => setUI({ pendingRename: note.id })}>
-          {titleOf(note.path)}
-        </button>
-      </div>
-      <div className="view-actions">
-        <button
-          className="icon-btn"
-          aria-label={mode === "read" ? "Edit (⌘E)" : "Reading view (⌘E)"}
-          title={mode === "read" ? "Currently in reading view. Click to edit (⌘E)" : "Currently editing. Click for reading view (⌘E)"}
-          onClick={() => vault.setMode(mode === "read" ? "edit" : "read")}
-        >
-          {mode === "read" ? <PenLine size={17} /> : <BookOpen size={17} />}
-        </button>
-        <button
-          className="icon-btn"
-          aria-label="More options"
-          title="More options"
-          onClick={(e) => {
-            const r = e.currentTarget.getBoundingClientRect();
-            setMenu({ x: r.right - 240, y: r.bottom + 4 });
-          }}
-        >
-          <MoreHorizontal size={17} />
-        </button>
-      </div>
+    <div className="note-toolbar">
+      {tool(mode === "read" ? "Edit (⌘E)" : "Reading view (⌘E)", mode === "read" ? <PenLine size={17} /> : <BookOpen size={17} />, () =>
+        vault.setMode(mode === "read" ? "edit" : "read"),
+      )}
+      <span className="tb-sep" />
+      {tool("Add a word", <Plus size={18} />, () => setUI({ addWord: { noteId: note.id, mode: "word" } }))}
+      {tool("Scan text into this note", <ScanText size={17} />, () => setUI({ scan: { noteId: note.id } }))}
+      {tool("Check my writing", <SpellCheck size={17} />, () => withEditor(checkWriting))}
+      {tool("Find new words", <Sparkles size={17} />, () => withEditor(findNewWords))}
+      <span className="tb-space" />
+      {tool(
+        "Links, cards and outline",
+        <PanelRight size={17} />,
+        () => (window.matchMedia("(max-width: 1400px)").matches ? setUI({ mobileRight: true }) : vault.setPanel("rightOpen")),
+        workspace.rightOpen,
+      )}
+      <button
+        className="icon-btn"
+        aria-label="More options"
+        title="More options"
+        onClick={(e) => {
+          const r = e.currentTarget.getBoundingClientRect();
+          setMenu({ x: r.right - 240, y: r.bottom + 4 });
+        }}
+      >
+        <MoreHorizontal size={17} />
+      </button>
+      {tool("New note", <SquarePen size={17} />, () => {
+        setUI({ pendingRename: vault.createNote({ folder: workspace.folder }) });
+        router.push("/");
+      })}
       <Sheet open={!!menu} anchor={menu} onClose={() => setMenu(null)}>
         <NoteMenu note={note} onClose={() => setMenu(null)} />
       </Sheet>
@@ -284,20 +287,21 @@ function ViewHeader({ note, mode }: { note: Note; mode: ViewMode }) {
   );
 }
 
-/** Phone header, as in Obsidian mobile. */
+/** Phone header, as in Apple Notes: back to the list, then Edit / Done and more. */
 function MobileHeader({ note, mode }: { note?: Note; mode: ViewMode }) {
   const [menu, setMenu] = useState(false);
   const router = useRouter();
   return (
     <header className="mobile-header">
-      <button className="icon-btn" aria-label="Back to notes" onClick={() => router.push("/notes")}>
-        <ArrowLeft size={20} />
+      <button className="mobile-back" onClick={() => router.push("/notes")}>
+        <ChevronLeft size={26} strokeWidth={2.2} /> Notes
       </button>
-      <button className="mobile-title" onClick={() => setUI({ palette: "notes" })} aria-label="Switch note">
-        <span>{note ? titleOf(note.path) : "Cranoly"}</span>
-      </button>
+      <span className="mobile-space" />
       {note && (
         <>
+          <button className="icon-btn" aria-label="More options" onClick={() => setMenu(true)}>
+            <MoreHorizontal size={22} />
+          </button>
           <button
             className="mobile-mode"
             aria-label={mode === "read" ? "Edit note" : "Done editing"}
@@ -307,9 +311,6 @@ function MobileHeader({ note, mode }: { note?: Note; mode: ViewMode }) {
             }}
           >
             {mode === "read" ? "Edit" : "Done"}
-          </button>
-          <button className="icon-btn" aria-label="More options" onClick={() => setMenu(true)}>
-            <MoreVertical size={20} />
           </button>
           <Sheet open={menu} onClose={() => setMenu(false)} title={titleOf(note.path)}>
             <NoteMenu note={note} onClose={() => setMenu(false)} />
@@ -321,51 +322,27 @@ function MobileHeader({ note, mode }: { note?: Note; mode: ViewMode }) {
 }
 
 function EmptyWorkspace() {
-  const { notes } = useVault();
-  const all = Object.values(notes);
-  const recent = [...all].sort((a, b) => b.updated - a.updated).slice(0, 5);
-  const firstRun = all.length === 0;
+  const { notes, workspace } = useVault();
+  const firstRun = Object.keys(notes).length === 0;
   return (
     <div className="empty-workspace">
-      <div className="hero-art" aria-hidden>
-        <span className="bubble b1">[[Hallo]]</span>
-        <span className="bubble b2">Hund :: dog</span>
-        <span className="bubble b3">#deutsch</span>
-        <span className="bubble b4">Ich ==bin== müde</span>
-        <span className="bubble b5">Tschüss!</span>
-      </div>
       <div className="empty-inner">
-        <p className="eyebrow"><span className="dot" /> {firstRun ? "Your vault is ready" : "No note open"}</p>
-        <h1 className="hero-title">{firstRun ? "Start your first note." : "Pick up where you left off."}</h1>
+        <h1 className="hero-title">{firstRun ? "Start your first note." : "No note open."}</h1>
         <p className="hero-lede">
-          Link ideas with <b>[[double brackets]]</b> and write flashcards like <b>Hallo :: Hello</b> right inside your notes.
+          Write lessons, texts and word lists. Select any word to make it a <b>flashcard</b> or a <b>link</b> to another
+          note.
         </p>
         <div className="hero-actions">
-          <button className="btn btn-primary btn-lg" onClick={() => setUI({ pendingRename: vault.createNote() })}>
-            Create a note
+          <button className="btn btn-primary btn-lg" onClick={() => setUI({ pendingRename: vault.createNote({ folder: workspace.folder }) })}>
+            <SquarePen size={17} /> New note
           </button>
           <button className="btn btn-lg" onClick={() => vault.openDaily()}>
-            Today&apos;s daily note
+            Today&apos;s page
           </button>
         </div>
         <button className="empty-action learn-link" onClick={() => setUI({ onboarding: true })}>
           New here? Take the 1-minute tour
         </button>
-        {!firstRun && (
-          <>
-            <button className="empty-action" onClick={() => setUI({ palette: "notes" })}>
-              Go to file <kbd>⌘O</kbd>
-            </button>
-            <div className="empty-sub">Recent files</div>
-            <div className="recent-chips">
-              {recent.map((n) => (
-                <button key={n.id} className="chip" onClick={() => vault.openNote(n.id)} title={n.path}>
-                  {titleOf(n.path)}
-                </button>
-              ))}
-            </div>
-          </>
-        )}
       </div>
     </div>
   );
@@ -378,7 +355,7 @@ export default function Workspace() {
     <div className="workspace">
       <MobileHeader note={note} mode={workspace.mode} />
       <section className="pane">
-        {note && <ViewHeader note={note} mode={workspace.mode} />}
+        {note && <NoteToolbar note={note} mode={workspace.mode} />}
         {note ? <NoteView key={note.id} note={note} mode={workspace.mode} /> : <EmptyWorkspace />}
       </section>
     </div>

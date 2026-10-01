@@ -1,29 +1,26 @@
 "use client";
 
-import { useEffect, useMemo, type ReactNode } from "react";
-import Link from "next/link";
+import { useEffect, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import {
-  CalendarDays, ChevronsUpDown, Dices, FileSearch, Folder, GitFork, Layers, Moon, PanelLeft, Search, Settings, SquareTerminal, Sun, X,
-  House, Plus,
-} from "lucide-react";
-import { cardsOf, dismissToast, getVault, indexOf, useToasts, useVault, vault } from "@/lib/store";
-import { getUI, openSearch, setUI, useUI } from "@/lib/ui";
+import { X } from "lucide-react";
+import { dismissToast, getVault, useToasts, useVault, vault } from "@/lib/store";
+import { getUI, setUI, useUI } from "@/lib/ui";
 import { applyTheme } from "@/lib/theme";
-import FileTree from "./FileTree";
-import SearchPanel from "./SearchPanel";
+import { usePhone } from "@/lib/usePhone";
+import Sidebar from "./Sidebar";
+import NoteList from "./NoteList";
 import CommandPalette from "./CommandPalette";
 import MobileNav from "./MobileNav";
 import EditToolbar from "./EditToolbar";
 import Logo from "./Logo";
-import TabBar from "./TabBar";
 import RightPanel from "./RightPanel";
-import Onboarding, { LearnButton } from "./Onboarding";
+import Onboarding from "./Onboarding";
 import WordSheet from "./WordSheet";
 import NativeBridge from "./NativeBridge";
 import NewWordsSheet from "./NewWordsSheet";
 import Welcome from "./Welcome";
 import AddWord from "./AddWord";
+import ScanSheet from "./ScanSheet";
 
 function Toasts() {
   const toasts = useToasts();
@@ -52,61 +49,11 @@ function Toasts() {
   );
 }
 
-function ThemeToggle({ className = "ribbon-btn ribbon-toggle" }: { className?: string }) {
-  const { settings } = useVault();
-  const dark =
-    settings.theme === "graphite" ||
-    (settings.theme === "system" && typeof window !== "undefined" && document.documentElement.dataset.theme === "graphite");
-  return (
-    <button
-      className={className}
-      aria-label={dark ? "Switch to Paper (light)" : "Switch to Graphite (dark)"}
-      title={dark ? "Paper theme" : "Graphite theme"}
-      onClick={() => vault.updateSettings({ theme: dark ? "paper" : "graphite" })}
-    >
-      {dark ? <Sun size={18} /> : <Moon size={18} />}
-    </button>
-  );
-}
-
-function StatusBar() {
-  const { notes, workspace, ready } = useVault();
-  const pathname = usePathname();
-  const note = pathname === "/" && workspace.active ? notes[workspace.active] : undefined;
-  const stats = useMemo(() => {
-    const cards = cardsOf(notes);
-    if (!note) return { cards: cards.length };
-    return {
-      cards: cards.length,
-      noteCards: cards.filter((c) => c.noteId === note.id).length,
-      backlinks: indexOf(notes).backlinks.get(note.id)?.length ?? 0,
-      words: note.content.trim() ? note.content.trim().split(/\s+/).length : 0,
-      chars: note.content.length,
-    };
-  }, [notes, note]);
-  if (!ready) return null;
-  return (
-    <footer className="statusbar">
-      {note && (
-        <>
-          <span>{stats.backlinks} backlinks</span>
-          <span>{stats.noteCards} cards</span>
-          <span>{stats.words} words</span>
-          <span>{stats.chars} characters</span>
-        </>
-      )}
-      <Link href="/flashcards" className="status-item">
-        <Layers size={12} /> {stats.cards}
-      </Link>
-    </footer>
-  );
-}
-
 const NO_SWIPE = "[data-no-swipe], input, textarea, .cm-editor, .tabs, .table-wrap, pre, .graph-canvas, .flip-wrap, .heatmap-wrap, .palette-backdrop";
 
 /**
- * Obsidian-style drawer gestures on phones: swipe right to reveal the file explorer,
- * swipe left (in a note) for links & outline. The drawer tracks your finger.
+ * Drawer gestures on touch screens: swipe right (tablets) for folders, swipe left in a note for
+ * links, cards and outline. The drawer tracks your finger.
  */
 function useDrawerSwipe(pathname: string) {
   useEffect(() => {
@@ -115,8 +62,8 @@ function useDrawerSwipe(pathname: string) {
     let panel: { el: HTMLElement; side: "left" | "right"; opening: boolean } | null = null;
     let dx = 0;
 
-    const isPhone = () => window.matchMedia("(max-width: 820px)").matches;
-    const tabletRight = () => window.matchMedia("(max-width: 1100px)").matches;
+    const isTablet = () => window.matchMedia("(min-width: 821px) and (max-width: 1180px)").matches;
+    const tabletRight = () => window.matchMedia("(max-width: 1400px)").matches;
 
     const onStart = (e: TouchEvent) => {
       if (e.touches.length !== 1) return;
@@ -142,7 +89,7 @@ function useDrawerSwipe(pathname: string) {
         let opening = true;
         if (ui.mobileLeft) [side, opening] = ["left", false];
         else if (ui.mobileRight) [side, opening] = ["right", false];
-        else if (x > 0 && isPhone()) side = "left";
+        else if (x > 0 && isTablet()) side = "left";
         else if (x < 0 && pathname === "/" && tabletRight()) side = "right";
         const el = side && document.querySelector<HTMLElement>(side === "left" ? ".sidebar-left" : ".right-panel");
         if (!el || !side) {
@@ -217,10 +164,11 @@ let launched = false;
 export default function AppShell({ children }: { children: ReactNode }) {
   const { workspace, notes, ready, settings } = useVault();
   useTheme(settings.theme, ready);
-  const { leftView, mobileLeft, mobileRight, editorFocused } = useUI();
+  const { mobileLeft, mobileRight, editorFocused } = useUI();
   const pathname = usePathname();
   const router = useRouter();
   useDrawerSwipe(pathname);
+  const phone = usePhone();
   const note = pathname === "/" && workspace.active ? notes[workspace.active] : undefined;
 
   useEffect(() => {
@@ -236,11 +184,11 @@ export default function AppShell({ children }: { children: ReactNode }) {
         setUI((s) => ({ palette: s.palette === "notes" ? null : "notes" }));
       } else if (key === "f" && e.shiftKey) {
         e.preventDefault();
-        vault.setPanel("leftOpen", true);
-        openSearch();
+        router.push("/search");
       } else if (key === "\\") {
         e.preventDefault();
-        vault.setPanel("leftOpen");
+        if (window.matchMedia("(max-width: 1180px)").matches) setUI((s) => ({ mobileLeft: !s.mobileLeft }));
+        else vault.setPanel("leftOpen");
       } else if (key === "e" && pathname === "/") {
         e.preventDefault();
         vault.setMode(getVault().workspace.mode === "read" ? "edit" : "read");
@@ -265,93 +213,22 @@ export default function AppShell({ children }: { children: ReactNode }) {
     if (phone && pathname === "/" && !new URLSearchParams(window.location.search).has("note")) router.replace("/home");
   }, [ready, pathname, router]);
 
-  const ribbon: Array<{ label: string; icon: ReactNode; run: () => void; active?: boolean }> = [
-    { label: "Home", icon: <House size={18} />, run: () => router.push("/home"), active: pathname === "/home" },
-    { label: "Add a word", icon: <Plus size={18} />, run: () => setUI({ addWord: { noteId: pathname === "/" ? workspace.active : null, mode: "word" } }) },
-    { label: "Open quick switcher", icon: <FileSearch size={18} />, run: () => setUI({ palette: "notes" }) },
-    { label: "Open graph view", icon: <GitFork size={18} />, run: () => router.push("/graph"), active: pathname === "/graph" },
-    { label: "Flashcards", icon: <Layers size={18} />, run: () => router.push("/flashcards"), active: pathname.startsWith("/flashcards") },
-    { label: "Open today's daily note", icon: <CalendarDays size={18} />, run: () => { vault.openDaily(); router.push("/"); } },
-    { label: "Open random note", icon: <Dices size={18} />, run: () => { vault.openRandom(); router.push("/"); } },
-    { label: "Open command palette", icon: <SquareTerminal size={18} />, run: () => setUI({ palette: "commands" }) },
-  ];
-
   return (
     <div
       className="shell"
       data-left={workspace.leftOpen ? "open" : "closed"}
+      data-list={pathname === "/" ? "shown" : "hidden"}
       data-right={note && workspace.rightOpen ? "open" : "closed"}
       data-mobile-left={mobileLeft ? "open" : "closed"}
       data-mobile-right={mobileRight ? "open" : "closed"}
       data-editing={editorFocused ? "true" : undefined}
     >
-      <nav className="ribbon" aria-label="Ribbon">
-        <button
-          className="ribbon-btn ribbon-toggle"
-          aria-label="Toggle left sidebar"
-          title="Toggle left sidebar (⌘\)"
-          onClick={() => vault.setPanel("leftOpen")}
-        >
-          <PanelLeft size={18} />
-        </button>
-        <div className="ribbon-group">
-          {ribbon.map((r) => (
-            <button key={r.label} className={`ribbon-btn${r.active ? " is-active" : ""}`} aria-label={r.label} title={r.label} onClick={r.run}>
-              {r.icon}
-            </button>
-          ))}
-        </div>
-        <span className="ribbon-spacer" />
-        <LearnButton className="ribbon-btn" label={false} />
-        <ThemeToggle />
-      </nav>
-
-      <aside className="sidebar-left" aria-label="Files and search">
-        <div className="sidebar-head">
-          <div className="side-tabs" role="tablist">
-            <button
-              role="tab"
-              aria-selected={leftView === "files"}
-              className={`side-tab${leftView === "files" ? " is-active" : ""}`}
-              aria-label="Files"
-              title="Files"
-              onClick={() => setUI({ leftView: "files" })}
-            >
-              <Folder size={17} />
-            </button>
-            <button
-              role="tab"
-              aria-selected={leftView === "search"}
-              className={`side-tab${leftView === "search" ? " is-active" : ""}`}
-              aria-label="Search"
-              title="Search (⌘⇧F)"
-              onClick={() => setUI({ leftView: "search" })}
-            >
-              <Search size={17} />
-            </button>
-          </div>
-          <button className="icon-btn only-mobile" aria-label="Close" onClick={() => setUI({ mobileLeft: false })}>
-            <X size={18} />
-          </button>
-        </div>
-        <div className="sidebar-body">{ready && (leftView === "files" ? <FileTree /> : <SearchPanel />)}</div>
-        <div className="learn-row">
-          <LearnButton className="learn-btn learn-wide" text="Learn the basics" />
-        </div>
-        <div className="vault-bar">
-          <button className="vault-switcher" onClick={() => setUI({ palette: "notes" })} title="Cranoly vault">
-            <span>Cranoly</span>
-            <ChevronsUpDown size={14} />
-          </button>
-          <Link href="/settings" className="icon-btn" aria-label="Settings" title="Settings">
-            <Settings size={16} />
-          </Link>
-        </div>
-      </aside>
+      {ready && !phone && <Sidebar />}
       <div className="drawer-scrim" onClick={() => setUI({ mobileLeft: false, mobileRight: false })} />
 
+      {pathname === "/" && !phone && <div className="list-col">{ready && <NoteList variant="column" />}</div>}
+
       <main className="main">
-        <TabBar />
         <div className="view">{ready ? children : <div className="boot"><Logo size={28} /></div>}</div>
       </main>
 
@@ -361,13 +238,13 @@ export default function AppShell({ children }: { children: ReactNode }) {
         </aside>
       )}
 
-      <StatusBar />
       <MobileNav />
       <EditToolbar />
       <CommandPalette />
       <Onboarding />
       <Welcome />
       <AddWord />
+      <ScanSheet />
       <WordSheet />
       <NewWordsSheet />
       <Toasts />

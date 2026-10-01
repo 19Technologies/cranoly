@@ -1,5 +1,5 @@
 // Core data model, persistence and migration from earlier builds.
-import { deviceLanguage } from "./languages";
+import { LANGUAGES, deviceLanguage } from "./languages";
 
 export interface Note {
   id: string;
@@ -8,6 +8,8 @@ export interface Note {
   content: string;
   created: number;
   updated: number;
+  /** Pinned notes stay at the top of the notes list. */
+  pinned?: boolean;
 }
 
 export type ViewMode = "read" | "edit" | "split";
@@ -20,8 +22,10 @@ export interface Settings {
   blurAnswersInNotes: boolean;
   showTagsInGraph: boolean;
   showOrphansInGraph: boolean;
-  /** Language being learned (spelling, voices, lookups, grammar checks). */
+  /** The language being practised right now (spelling, voices, lookups, grammar checks). */
   learning: string;
+  /** Every language being learned; `learning` is always one of them. */
+  languages: string[];
   /** The learner's own language. */
   native: string;
   /** Explain and Check may ask Wiktionary / LanguageTool (only when tapped). */
@@ -39,6 +43,8 @@ export interface Workspace {
   leftOpen: boolean;
   rightOpen: boolean;
   expanded: string[];
+  /** The folder the notes list shows ("" for all notes). */
+  folder: string;
 }
 
 export interface VaultState {
@@ -69,6 +75,7 @@ export const DEFAULT_SETTINGS: Settings = {
   native: "en",
   onlineLookups: true,
   onboarded: false,
+  languages: ["de"],
 };
 
 export const titleOf = (path: string) => path.slice(path.lastIndexOf("/") + 1);
@@ -104,8 +111,9 @@ export function emptyState(native = "en"): VaultState {
       historyIndex: -1,
       mode: "edit",
       leftOpen: true,
-      rightOpen: true,
+      rightOpen: false,
       expanded: [],
+      folder: "",
     },
   };
 }
@@ -123,6 +131,13 @@ function safeParse<T>(raw: string | null): T | null {
   } catch {
     return null;
   }
+}
+
+/** Keep the language list and the current language consistent. */
+export function withLanguages(settings: Settings): Settings {
+  const known = (c: unknown): c is string => LANGUAGES.some((l) => l.code === c);
+  const list = Array.isArray(settings.languages) ? [...new Set(settings.languages.filter(known))] : [];
+  return { ...settings, languages: list.includes(settings.learning) ? list : [settings.learning, ...list] };
 }
 
 /** Accept anything shaped roughly like a VaultState and fill in the gaps. */
@@ -144,13 +159,13 @@ export function normalize(input: Partial<VaultState>): VaultState {
     folders: Array.isArray(input.folders) ? input.folders : [],
     activity: input.activity && typeof input.activity === "object" ? input.activity : {},
     seen: input.seen && typeof input.seen === "object" ? input.seen : {},
-    settings: {
+    settings: withLanguages({
       ...DEFAULT_SETTINGS,
       native: deviceLanguage(),
       // People who already have notes came before the welcome existed; don't show it to them.
       onboarded: Object.keys(notes).length > 0,
       ...(input.settings ?? {}),
-    },
+    }),
     workspace: ws,
   };
 }

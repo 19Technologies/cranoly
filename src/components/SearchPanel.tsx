@@ -29,15 +29,15 @@ function highlight(text: string, terms: string[]) {
 
 export default function SearchPanel({ autoFocus = false }: { autoFocus?: boolean }) {
   const { notes, settings } = useVault();
-  const { searchQuery, leftView } = useUI();
+  const { searchQuery } = useUI();
   const input = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const pathname = usePathname();
   const index = indexOf(notes);
 
   useEffect(() => {
-    if (leftView === "search" || autoFocus) input.current?.focus();
-  }, [leftView, autoFocus]);
+    if (autoFocus) input.current?.focus();
+  }, [autoFocus]);
 
   const { tagFilters, terms } = useMemo(() => {
     const words = searchQuery.trim().split(/\s+/).filter(Boolean);

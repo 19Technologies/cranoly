@@ -3,13 +3,11 @@
 import { useSyncExternalStore } from "react";
 import type { InstallPromptEvent } from "@/components/ServiceWorker";
 
-export type LeftView = "files" | "search";
 export type PaletteMode = "commands" | "notes" | null;
 export type SheetKind = "menu" | "tabs" | null;
 export type RightTab = "backlinks" | "outgoing" | "cards" | "outline" | "graph";
 
 export interface UIState {
-  leftView: LeftView;
   searchQuery: string;
   palette: PaletteMode;
   mobileLeft: boolean;
@@ -32,12 +30,15 @@ export interface UIState {
   explain: { word: string; noteId: string | null } | null;
   /** "Find new words": the text being mined, and the note new cards go to. */
   newWords: { text: string; noteId: string } | null;
-  /** The ＋ sheet: add a word (or paste a list) without any syntax. */
-  addWord: { noteId: string | null; mode: "word" | "list" } | null;
+  /** The ＋ sheet: add a word (or paste a list) without any syntax. `word` comes from a selection. */
+  addWord: { noteId: string | null; mode: "word" | "list"; word?: string } | null;
+  /** Folder whose name should be edited in place next time the sidebar renders. */
+  renameFolder: string | null;
+  /** "Scan text" from a photo, and the note the text would go to. */
+  scan: { noteId: string | null } | null;
 }
 
 const INITIAL: UIState = {
-  leftView: "files",
   searchQuery: "",
   palette: null,
   mobileLeft: false,
@@ -53,6 +54,8 @@ const INITIAL: UIState = {
   explain: null,
   newWords: null,
   addWord: null,
+  renameFolder: null,
+  scan: null,
 };
 
 let ui = INITIAL;
@@ -79,6 +82,7 @@ export function useUI() {
   );
 }
 
+/** Fill in the search screen's query (then go to /search). */
 export function openSearch(query = "") {
-  setUI({ leftView: "search", searchQuery: query, mobileLeft: true });
+  setUI({ searchQuery: query, mobileLeft: false });
 }

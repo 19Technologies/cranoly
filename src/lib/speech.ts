@@ -1,5 +1,9 @@
-// "Hear it": pronunciation with the device's own text-to-speech voices. Works offline.
+// The device's own text-to-speech voices: the fallback when a language's natural voice
+// (see voices.ts) hasn't been downloaded.
 import { plainLine } from "./links";
+
+/** Markdown → the words to say. */
+export const speakable = (text: string) => plainLine(text.replace(/==/g, "")).replace(/\s+/g, " ").trim();
 
 export const canSpeak = () => typeof window !== "undefined" && "speechSynthesis" in window;
 
@@ -15,7 +19,7 @@ function voiceFor(tag: string) {
 /** Speak text in a language. Returns false when the device has no voice for it. */
 export function speak(text: string, tag: string) {
   if (!canSpeak()) return false;
-  const clean = plainLine(text.replace(/==/g, "")).replace(/\s+/g, " ").trim();
+  const clean = speakable(text);
   if (!clean) return true;
   const { voice, known } = voiceFor(tag);
   if (known && !voice) return false;

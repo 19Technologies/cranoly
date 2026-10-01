@@ -1,7 +1,8 @@
 // Study helpers. No scheduling or difficulty ratings: just decks you flip through,
 // plus a per-day activity log that feeds the heatmap and streak.
-import { isoDay, type Note } from "./vault";
+import { isoDay, type Note, type Settings } from "./vault";
 import type { Card } from "./cards";
+import { languageOf } from "./languages";
 
 export function shuffled<T>(items: T[]): T[] {
   const a = [...items];
@@ -75,4 +76,17 @@ export function notSeenLately(cards: Card[], seen: Record<string, number>, today
 export function fromRecentNotes(cards: Card[], notes: Record<string, Note>, today: Date, days = 7) {
   const cutoff = today.getTime() - (days - 1) * DAY;
   return cards.filter((c) => (notes[c.noteId]?.updated ?? 0) >= cutoff);
+}
+
+/** The language a card is in: its words note's ("Spanish words"), else the one being learned. */
+export function cardLanguage(card: Card, notes: Record<string, Note>, settings: Settings) {
+  const path = notes[card.noteId]?.path;
+  return settings.languages.find((c) => path === `${languageOf(c).name} words`) ?? settings.learning;
+}
+
+/** Leave out the words of the other languages being learned (other notes stay in). */
+export function forLanguage(cards: Card[], notes: Record<string, Note>, settings: Settings, code = settings.learning) {
+  if (settings.languages.length < 2) return cards;
+  const others = new Set(settings.languages.filter((c) => c !== code).map((c) => `${languageOf(c).name} words`));
+  return cards.filter((c) => !others.has(notes[c.noteId]?.path ?? ""));
 }

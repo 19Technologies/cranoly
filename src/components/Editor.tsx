@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { BookA, FilePlus2, ListPlus, Sparkles, SpellCheck, Volume2 } from "lucide-react";
+import { BookA, FilePlus2, Layers, Link2, ListPlus, Sparkles, SpellCheck, Volume2 } from "lucide-react";
 import { EditorSelection, EditorState, Prec, Transaction } from "@codemirror/state";
 import { EditorView, keymap, placeholder, type ViewUpdate } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
@@ -13,15 +13,17 @@ import { continueList, diff, indent, linkSelection, pairBrackets, setActiveEdito
 import { livePreview, refreshPreview } from "@/lib/live-preview";
 import { writingIssues } from "@/lib/issues";
 import { languageOf } from "@/lib/languages";
-import { checkWriting, explain, findNewWords, hear, makeCards } from "@/lib/smart";
+import { checkWriting, explain, findNewWords, flashcard, hear, makeCards } from "@/lib/smart";
 import { wordListSize } from "@/lib/words";
 
-/** Floating bar over a selection (desktop): Explain, Hear, New words, Make cards, Check. */
+/** Floating bar over a selection (desktop): Flashcard, Link, Explain, Hear, New words, Make cards, Check. */
 interface Bar {
   top: number;
   left: number;
   words: number;
   list: boolean;
+  /** The selection stays on one line (a word or phrase rather than a block). */
+  oneLine: boolean;
 }
 
 interface Suggest {
@@ -32,7 +34,8 @@ interface Suggest {
   active: number;
 }
 
-const PLACEHOLDER = "Start writing…\n\nLink notes with [[double brackets]], and write flashcards like  Hallo :: Hello";
+// One short line: a taller placeholder stretches the caret to its height.
+const PLACEHOLDER = "Start writing…";
 
 export default function Editor({ note, autoFocus = false }: { note: Note; autoFocus?: boolean }) {
   const wrapper = useRef<HTMLDivElement>(null);
@@ -137,12 +140,13 @@ export default function Editor({ note, autoFocus = false }: { note: Note; autoFo
       }
       const words = text.trim().split(/\s+/).length;
       const list = wordListSize(text) > 0;
+      const oneLine = !text.includes("\n");
       v.requestMeasure({
         read: () => ({ a: v.coordsAtPos(sel.from), b: v.coordsAtPos(sel.to), box: frame.getBoundingClientRect() }),
         write: ({ a, b, box }) => {
           if (!a) return;
           const mid = b && Math.abs(b.top - a.top) < 4 ? (a.left + b.left) / 2 : a.left;
-          setBar({ top: a.top - box.top, left: Math.max(130, Math.min(mid - box.left, box.width - 130)), words, list });
+          setBar({ top: a.top - box.top, left: Math.max(190, Math.min(mid - box.left, box.width - 190)), words, list, oneLine });
         },
       });
     };
@@ -321,6 +325,16 @@ export default function Editor({ note, autoFocus = false }: { note: Note; autoFo
       <div ref={host} />
       {bar && (
         <div className="sel-bar" style={{ top: bar.top, left: bar.left }} role="toolbar" aria-label="Selection" onMouseDown={(e) => e.preventDefault()}>
+          {bar.oneLine && bar.words <= 6 && !bar.list && (
+            <button className="sel-main" onClick={() => act(flashcard)} title="Make a flashcard: the meaning fills itself in">
+              <Layers size={15} /> Flashcard
+            </button>
+          )}
+          {bar.oneLine && bar.words <= 8 && (
+            <button className="sel-main" onClick={() => act((v) => wrap(v, "[[", "]]"))} title="Link to a note with this name">
+              <Link2 size={15} /> Link
+            </button>
+          )}
           {bar.words <= 4 && (
             <button onClick={() => act(explain)} title="Explain: meaning and grammar">
               <BookA size={15} /> Explain
