@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowRight, Check, Download, Layers, Link2, Loader2, Plus, Volume2, Wifi } from "lucide-react";
 import Logo from "./Logo";
 import VoiceList from "./Voices";
+import Tumble from "./Tumble";
 import { toast, useVault, vault } from "@/lib/store";
 import { LANGUAGES, languageOf } from "@/lib/languages";
 import { useMeaning } from "@/lib/useMeaning";
@@ -54,7 +55,9 @@ function Intro({ onNext, onRestored }: { onNext: () => void; onRestored: () => v
       </ul>
       <div className="wc-foot">
         <button className="btn btn-primary btn-lg" onClick={onNext}>
-          Get started <ArrowRight size={17} />
+          <Tumble label="Get started">
+            Get started <ArrowRight size={17} />
+          </Tumble>
         </button>
       </div>
       <p className="wc-restore">
@@ -134,7 +137,9 @@ function Languages({ onNext }: { onNext: (picked: string[]) => void }) {
             onNext(picked);
           }}
         >
-          Continue <ArrowRight size={17} />
+          <Tumble label="Continue">
+            Continue <ArrowRight size={17} />
+          </Tumble>
         </button>
       </div>
     </>
@@ -166,7 +171,9 @@ function Voices({ onNext }: { onNext: () => void }) {
       <div className="wc-foot">
         {started ? (
           <button className="btn btn-primary btn-lg" onClick={onNext}>
-            Continue <ArrowRight size={17} />
+            <Tumble label="Continue">
+              Continue <ArrowRight size={17} />
+            </Tumble>
           </button>
         ) : (
           <>
@@ -174,7 +181,9 @@ function Voices({ onNext }: { onNext: () => void }) {
               Not now
             </button>
             <button className="btn btn-primary btn-lg" onClick={() => codes.forEach((c) => void downloadVoice(c).catch(() => {}))}>
-              <Download size={17} /> Download · {mb} MB
+              <Tumble label={`Download · ${mb} MB`}>
+                <Download size={17} /> Download · {mb} MB
+              </Tumble>
             </button>
           </>
         )}
@@ -246,7 +255,9 @@ function FirstWord({ onAdded, onSkip }: { onAdded: (front: string, back: string)
           Skip for now
         </button>
         <button className="btn btn-primary btn-lg" onClick={add} disabled={!word.trim() || !meaning.trim()}>
-          <Plus size={17} /> Add word
+          <Tumble label="Add word">
+            <Plus size={17} /> Add word
+          </Tumble>
         </button>
       </div>
     </>
@@ -290,7 +301,9 @@ function TryIt({ card, onDone }: { card: { front: string; back: string } | null;
         <NotesTip word={languageOf(settings.learning).starter?.[0] ?? "word"} />
         <div className="wc-foot">
           <button className="btn btn-primary btn-lg" onClick={onDone}>
-            Start using Cranoly <ArrowRight size={17} />
+            <Tumble label="Start using Cranoly">
+              Start using Cranoly <ArrowRight size={17} />
+            </Tumble>
           </button>
         </div>
       </>
@@ -320,7 +333,9 @@ function TryIt({ card, onDone }: { card: { front: string; back: string } | null;
       {flipped && <NotesTip word={card.front.split(" ").at(-1) ?? card.front} />}
       <div className="wc-foot">
         <button className="btn btn-primary btn-lg" onClick={onDone} disabled={!flipped}>
-          <Check size={17} /> Start using Cranoly
+          <Tumble label="Start using Cranoly">
+            <Check size={17} /> Start using Cranoly
+          </Tumble>
         </button>
       </div>
     </>

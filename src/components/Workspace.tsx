@@ -15,6 +15,7 @@ import { checkWriting, findNewWords, makeCards, withEditor } from "@/lib/smart";
 import MarkdownView from "./MarkdownView";
 import Sheet, { type Anchor } from "./Sheet";
 import Editor from "./Editor";
+import Tumble from "./Tumble";
 
 function InlineTitle({ note }: { note: Note }) {
   const { pendingRename } = useUI();
@@ -334,7 +335,9 @@ function EmptyWorkspace() {
         </p>
         <div className="hero-actions">
           <button className="btn btn-primary btn-lg" onClick={() => setUI({ pendingRename: vault.createNote({ folder: workspace.folder }) })}>
-            <SquarePen size={17} /> New note
+            <Tumble label="New note">
+              <SquarePen size={17} /> New note
+            </Tumble>
           </button>
           <button className="btn btn-lg" onClick={() => vault.openDaily()}>
             Today&apos;s page

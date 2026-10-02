@@ -12,6 +12,9 @@ import { friendlyCard, plainLine } from "@/lib/links";
 import { say } from "@/lib/smart";
 import { titleOf } from "@/lib/vault";
 import { setUI } from "@/lib/ui";
+import { useSlider } from "@/lib/useSlider";
+import { haptic } from "@/lib/native";
+import Tumble from "@/components/Tumble";
 
 const hash = (s: string) => [...s].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
 
@@ -22,6 +25,7 @@ export default function HomePage() {
   const every = useCards();
   const cards = useMemo(() => forLanguage(every, notes, settings), [every, notes, settings]);
   const several = settings.languages.length > 1;
+  const langs = useSlider<HTMLDivElement>(".is-on", settings.learning);
   const today = useToday();
   const hour = useHour();
   const [revealed, setRevealed] = useState(false);
@@ -54,14 +58,18 @@ export default function HomePage() {
       <header className="home-head">
         <div>
           {several ? (
-            <div className="home-langs" role="radiogroup" aria-label="Language">
+            <div ref={langs} className="home-langs has-slider" role="radiogroup" aria-label="Language">
+              <span className="slider-pill" aria-hidden />
               {settings.languages.map((c) => (
                 <button
                   key={c}
                   role="radio"
                   aria-checked={c === settings.learning}
                   className={c === settings.learning ? "is-on" : ""}
-                  onClick={() => vault.updateSettings({ learning: c })}
+                  onClick={() => {
+                    if (c !== settings.learning) haptic();
+                    vault.updateSettings({ learning: c });
+                  }}
                 >
                   {languageOf(c).name}
                 </button>
@@ -89,7 +97,9 @@ export default function HomePage() {
             href={`/flashcards/study?${stale.length ? "smart=stale" : "shuffle=1"}&limit=10${several ? `&lang=${settings.learning}` : ""}`}
             className="btn btn-primary btn-lg"
           >
-            <Play size={17} /> Start
+            <Tumble label="Start">
+              <Play size={17} /> Start
+            </Tumble>
           </Link>
         </section>
       ) : (
@@ -99,7 +109,9 @@ export default function HomePage() {
             <p>Type a {lang.name} word and Cranoly fills in the meaning.</p>
           </div>
           <button className="btn btn-primary btn-lg" onClick={() => setUI({ addWord: { noteId: null, mode: "word" } })}>
-            <Plus size={17} /> Add a word
+            <Tumble label="Add a word">
+              <Plus size={17} /> Add a word
+            </Tumble>
           </button>
         </section>
       )}

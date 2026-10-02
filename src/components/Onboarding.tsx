@@ -6,6 +6,8 @@ import { ArrowLeft, ArrowRight, BookA, GraduationCap, Moon, MonitorSmartphone, S
 import { LANGUAGES } from "@/lib/languages";
 import { useVault, vault } from "@/lib/store";
 import { setUI, useUI } from "@/lib/ui";
+import { useSlider } from "@/lib/useSlider";
+import { haptic } from "@/lib/native";
 
 /* Small live demos, one per step, drawn with the app's own styles. */
 
@@ -168,16 +170,21 @@ function DemoTheme() {
     { id: "graphite", label: "Graphite", icon: <Moon size={18} /> },
     { id: "system", label: "System", icon: <MonitorSmartphone size={18} /> },
   ] as const;
+  const seg = useSlider<HTMLDivElement>(".is-on", settings.theme);
   return (
     <div className="ob-demo">
-      <div className="seg seg-tall" role="radiogroup" aria-label="Theme">
+      <div ref={seg} className="seg seg-tall has-slider" role="radiogroup" aria-label="Theme">
+        <span className="slider-pill" aria-hidden />
         {options.map((o) => (
           <button
             key={o.id}
             role="radio"
             aria-checked={settings.theme === o.id}
             className={settings.theme === o.id ? "is-on" : ""}
-            onClick={() => vault.updateSettings({ theme: o.id })}
+            onClick={() => {
+              if (settings.theme !== o.id) haptic();
+              vault.updateSettings({ theme: o.id });
+            }}
           >
             {o.icon}
             <span>{o.label}</span>

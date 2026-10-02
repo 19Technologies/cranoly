@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, FilePlus2, ListPlus, Loader2, ScanText, Volume2 } from "lucide-react";
 import Sheet from "./Sheet";
+import Tumble from "./Tumble";
 import { haptic } from "@/lib/native";
 import { toast, useVault, vault, wordsNoteTitle } from "@/lib/store";
 import { languageOf } from "@/lib/languages";
@@ -117,7 +118,9 @@ function WordForm({ noteId, initial }: { noteId: string | null; initial?: string
           </button>
         )}
         <button className="btn btn-primary btn-lg" onClick={() => save(false)} disabled={!ready}>
-          <Check size={17} /> Save
+          <Tumble label="Save">
+            <Check size={17} /> Save
+          </Tumble>
         </button>
       </div>
       {added > 0 && <p className="add-hint">{added} added so far.</p>}

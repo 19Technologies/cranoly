@@ -13,6 +13,7 @@ import { LearnButton } from "./Onboarding";
 import { allFolders, inFolder, toast, useCards, useVault, vault } from "@/lib/store";
 import { titleOf } from "@/lib/vault";
 import { setUI, useUI } from "@/lib/ui";
+import { useSlider } from "@/lib/useSlider";
 
 function FolderName({ path, onDone }: { path: string; onDone: () => void }) {
   const [value, setValue] = useState(titleOf(path));
@@ -45,7 +46,7 @@ export function ThemeToggle({ className = "icon-btn" }: { className?: string }) 
     (settings.theme === "system" && typeof window !== "undefined" && document.documentElement.dataset.theme === "graphite");
   return (
     <button
-      className={className}
+      className={`${className} theme-toggle`}
       aria-label={dark ? "Switch to Paper (light)" : "Switch to Graphite (dark)"}
       title={dark ? "Paper theme" : "Graphite theme"}
       onClick={() => vault.updateSettings({ theme: dark ? "paper" : "graphite" })}
@@ -78,6 +79,9 @@ export default function Sidebar() {
     if (pathname !== "/") router.push("/");
   };
   const newFolder = (parent = "") => setUI({ renameFolder: vault.createFolder(parent) });
+  // Each group's highlight slides to the chosen place or folder.
+  const placesNav = useSlider<HTMLElement>(".sb-item.is-active", pathname);
+  const foldersBox = useSlider<HTMLDivElement>(".sb-item.is-active", `${pathname}|${workspace.folder}|${folders.join("\n")}`);
 
   const places = [
     { href: "/home", label: "Home", icon: <House size={17} />, active: pathname === "/home" },
@@ -149,7 +153,8 @@ export default function Sidebar() {
       </div>
 
       <div className="sb-body">
-        <nav className="sb-group" aria-label="Places">
+        <nav ref={placesNav} className="sb-group has-slider" aria-label="Places">
+          <span className="slider-pill" aria-hidden />
           {places.map((p) => (
             <Link key={p.href} href={p.href} className={`sb-item${p.active ? " is-active" : ""}`} onClick={closeDrawer}>
               {p.icon}
@@ -173,7 +178,8 @@ export default function Sidebar() {
             <FolderPlus size={15} />
           </button>
         </div>
-        <div className="sb-group">
+        <div ref={foldersBox} className="sb-group has-slider">
+          <span className="slider-pill" aria-hidden />
           {folderRow("", 0)}
           {folders.map((f) => folderRow(f, f.split("/").length - 1))}
         </div>

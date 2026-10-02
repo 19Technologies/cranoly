@@ -12,6 +12,8 @@ import { friendlyCard, plainLine } from "@/lib/links";
 import { folderOf, titleOf, type Note } from "@/lib/vault";
 import { parseDay, useToday } from "@/lib/useToday";
 import { setUI } from "@/lib/ui";
+import { useSlider } from "@/lib/useSlider";
+import { haptic } from "@/lib/native";
 
 const DAY = 86_400_000;
 
@@ -195,10 +197,18 @@ function FolderChips({ onFolderMenu }: { onFolderMenu: (path: string) => void })
   const state = useVault();
   const current = state.workspace.folder;
   const folders = allFolders(state);
+  const chips = useSlider<HTMLDivElement>(".nl-chip.is-on", `${current}|${folders.join("\n")}`);
   if (!folders.length) return null;
   return (
-    <div className="nl-chips" data-no-swipe>
-      <button className={`nl-chip${current === "" ? " is-on" : ""}`} onClick={() => vault.showFolder("")}>
+    <div ref={chips} className="nl-chips has-slider" data-no-swipe>
+      <span className="slider-pill" aria-hidden />
+      <button
+        className={`nl-chip${current === "" ? " is-on" : ""}`}
+        onClick={() => {
+          if (current !== "") haptic();
+          vault.showFolder("");
+        }}
+      >
         All
       </button>
       {folders.map((f) => (
@@ -211,7 +221,15 @@ function FolderChips({ onFolderMenu }: { onFolderMenu: (path: string) => void })
 function FolderChip({ path, on, onMenu }: { path: string; on: boolean; onMenu: () => void }) {
   const press = usePress(onMenu);
   return (
-    <button className={`nl-chip${on ? " is-on" : ""}`} onClick={() => vault.showFolder(path)} title={path} {...press}>
+    <button
+      className={`nl-chip${on ? " is-on" : ""}`}
+      onClick={() => {
+        if (!on) haptic();
+        vault.showFolder(path);
+      }}
+      title={path}
+      {...press}
+    >
       <Folder size={13} /> {titleOf(path)}
     </button>
   );
@@ -324,6 +342,9 @@ export default function NoteList({ variant }: { variant: "column" | "page" }) {
     fn();
   };
   const active = pathname === "/" ? workspace.active : null;
+  // The yellow highlight glides to the open note, and follows it when edits move it up the list.
+  const order = sections.map((s) => s.notes.map((n) => n.id).join(",")).join("|");
+  const scroll = useSlider<HTMLDivElement>(".nl-row.is-active", `${active}|${order}`);
   const name = folder ? titleOf(folder) : variant === "page" ? "Notes" : "All notes";
   const total = shown.length;
 
@@ -375,7 +396,8 @@ export default function NoteList({ variant }: { variant: "column" | "page" }) {
 
       {variant === "page" && <FolderChips onFolderMenu={(path) => setFolderMenu({ path, fresh: false })} />}
 
-      <div className="nl-scroll">
+      <div ref={scroll} className="nl-scroll has-slider">
+        <span className="slider-pill" aria-hidden />
         {sections.map((s) => (
           <section key={s.name} className="nl-section">
             <h2>

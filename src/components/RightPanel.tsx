@@ -9,6 +9,7 @@ import { buildGraph } from "@/lib/graph";
 import { cardsOf, indexOf, toast, useVault, vault } from "@/lib/store";
 import { RightTab, setUI, useUI } from "@/lib/ui";
 import GraphCanvas from "./GraphCanvas";
+import { useSlider } from "@/lib/useSlider";
 
 const TABS: Array<{ id: RightTab; label: string; icon: React.ReactNode }> = [
   { id: "backlinks", label: "Backlinks", icon: <Link2 size={17} /> },
@@ -221,10 +222,12 @@ function LocalGraph({ note }: { note: Note }) {
 export default function RightPanel({ note }: { note: Note }) {
   const { rightTab } = useUI();
   const tab = TABS.find((t) => t.id === rightTab) ?? TABS[0];
+  const tabs = useSlider<HTMLDivElement>(".side-tab.is-active", tab.id);
   return (
     <div className="right-panel-inner">
       <div className="side-tabs-bar">
-        <div className="side-tabs" role="tablist">
+        <div ref={tabs} className="side-tabs has-slider" role="tablist">
+          <span className="slider-pill" aria-hidden />
           {TABS.map((t) => (
             <button
               key={t.id}

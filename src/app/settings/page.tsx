@@ -9,6 +9,8 @@ import type { Settings } from "@/lib/vault";
 import { LANGUAGES, languageOf } from "@/lib/languages";
 import { ENGINE_MB, downloadVoice, useVoices } from "@/lib/voices";
 import { setUI, useUI } from "@/lib/ui";
+import { useSlider } from "@/lib/useSlider";
+import { haptic } from "@/lib/native";
 
 function Appearance() {
   const { settings } = useVault();
@@ -17,17 +19,22 @@ function Appearance() {
     { id: "graphite", label: "Graphite", hint: "Obsidian black", icon: <Moon size={18} /> },
     { id: "system", label: "System", hint: "Follow device", icon: <MonitorSmartphone size={18} /> },
   ] as const;
+  const seg = useSlider<HTMLDivElement>(".is-on", settings.theme);
   return (
     <section className="card-panel">
       <div className="card-panel-head"><h2>Appearance</h2></div>
-      <div className="seg seg-tall" role="radiogroup" aria-label="Theme">
+      <div ref={seg} className="seg seg-tall has-slider" role="radiogroup" aria-label="Theme">
+        <span className="slider-pill" aria-hidden />
         {options.map((o) => (
           <button
             key={o.id}
             role="radio"
             aria-checked={settings.theme === o.id}
             className={settings.theme === o.id ? "is-on" : ""}
-            onClick={() => vault.updateSettings({ theme: o.id })}
+            onClick={() => {
+              if (settings.theme !== o.id) haptic();
+              vault.updateSettings({ theme: o.id });
+            }}
           >
             {o.icon}
             <span>{o.label}</span>
@@ -196,7 +203,14 @@ function Toggle({ label, hint, field }: { label: string; hint: string; field: Sw
         <span>{hint}</span>
       </span>
       <span className="switch">
-        <input type="checkbox" checked={settings[field]} onChange={(e) => vault.updateSettings({ [field]: e.target.checked })} />
+        <input
+          type="checkbox"
+          checked={settings[field]}
+          onChange={(e) => {
+            haptic();
+            vault.updateSettings({ [field]: e.target.checked });
+          }}
+        />
         <span className="switch-track" />
       </span>
     </label>
