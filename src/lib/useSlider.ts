@@ -10,7 +10,7 @@ interface Box {
   b: number;
 }
 
-/** Jumps longer than this snap instead of stretching (CRANOLY.md → Motion → List selection). */
+/** Jumps longer than this snap instead of stretching (CRANOLY.md → Motion → Component motion). */
 const LONG = 240;
 /** How long the trailing edge waits, so the pill stretches as it travels (about 40% of the distance). */
 const LAG = 18;

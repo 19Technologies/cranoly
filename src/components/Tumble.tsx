@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 /**
- * A main button's label that tumbles over like a cube face on hover (CRANOLY.md → Motion → Action Pill).
+ * A main button's label that tumbles over like a cube face on hover (CRANOLY.md → Motion → Component motion).
  * The back face is drawn by CSS from `label`, so the text exists once for screen readers and tests.
  */
 export default function Tumble({ label, children }: { label: string; children: ReactNode }) {

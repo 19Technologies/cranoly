@@ -3793,6 +3793,11 @@ button.tag:hover {
 .chip:hover {
   border-color: var(--edge);
 }
+.chip.on {
+  color: var(--tint-ink);
+  background: var(--sun);
+  border-color: var(--edge);
+}
 .empty-action {
   color: var(--text-muted);
   font-weight: 600;
