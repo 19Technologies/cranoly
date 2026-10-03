@@ -36,6 +36,8 @@ export interface UIState {
   renameFolder: string | null;
   /** "Scan text" from a photo, and the note the text would go to. */
   scan: { noteId: string | null } | null;
+  /** "Format": the note being handed to an AI assistant, and pasted back. */
+  format: { noteId: string } | null;
 }
 
 const INITIAL: UIState = {
@@ -56,6 +58,7 @@ const INITIAL: UIState = {
   addWord: null,
   renameFolder: null,
   scan: null,
+  format: null,
 };
 
 let ui = INITIAL;

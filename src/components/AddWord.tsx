@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Check, FilePlus2, ListPlus, Loader2, ScanText, Volume2 } from "lucide-react";
 import Sheet from "./Sheet";
@@ -38,7 +38,32 @@ function NotePicker({ value, onChange }: { value: string | null; onChange: (id: 
   );
 }
 
-/** One word. Opened from a selection ("Flashcard"), it starts with that word and saves just the one card. */
+/** "Practise both ways": also make the card that shows the meaning and asks for the word (saved as ":::"). */
+function BothWays({ on, onChange, hint }: { on: boolean; onChange: (on: boolean) => void; hint: ReactNode }) {
+  return (
+    <label className="add-both">
+      <span className="setting-text">
+        <b>Practise both ways</b>
+        <span>{hint}</span>
+      </span>
+      <span className="switch">
+        <input
+          type="checkbox"
+          checked={on}
+          onChange={(e) => {
+            haptic();
+            onChange(e.target.checked);
+          }}
+        />
+        <span className="switch-track" />
+      </span>
+    </label>
+  );
+}
+
+const short = (t: string) => (t.length > 32 ? `${t.slice(0, 31).trimEnd()}…` : t);
+
+/** One word. Opened from a selection ("Flashcard"), it starts with that word and saves just that word. */
 function WordForm({ noteId, initial }: { noteId: string | null; initial?: string }) {
   const { settings } = useVault();
   const lang = languageOf(settings.learning);
@@ -46,6 +71,7 @@ function WordForm({ noteId, initial }: { noteId: string | null; initial?: string
   const [typed, setTyped] = useState<string | null>(null);
   const [target, setTarget] = useState(noteId);
   const [added, setAdded] = useState(0);
+  const [bothWays, setBothWays] = useState(false);
   const wordInput = useRef<HTMLInputElement>(null);
   const found = useMeaning(word, lang, settings.onlineLookups);
   const meaning = typed ?? (found.status === "found" ? found.meaning ?? "" : "");
@@ -54,7 +80,7 @@ function WordForm({ noteId, initial }: { noteId: string | null; initial?: string
 
   const save = (again: boolean) => {
     if (!ready) return;
-    vault.addCard(front, meaning, target);
+    vault.addCard(front, meaning, target, bothWays);
     haptic("success");
     if (again) {
       setAdded((n) => n + 1);
@@ -62,7 +88,7 @@ function WordForm({ noteId, initial }: { noteId: string | null; initial?: string
       setTyped(null);
       wordInput.current?.focus();
     } else {
-      toast(added ? `Added ${added + 1} words` : `Added “${front}”`);
+      toast(added ? `Added ${added + 1} words` : `Added “${front}”${bothWays ? " both ways" : ""}`);
       close();
     }
   };
@@ -110,6 +136,15 @@ function WordForm({ noteId, initial }: { noteId: string | null; initial?: string
         />
       </label>
       {front !== word.trim() && word.trim() && <p className="add-hint">Saved as <b>{front}</b>, with its article.</p>}
+      <BothWays
+        on={bothWays}
+        onChange={setBothWays}
+        hint={
+          ready
+            ? `Adds a second card that shows “${short(meaning.trim())}” and asks for “${short(front)}”.`
+            : "Adds a second card that shows the meaning and asks for the word."
+        }
+      />
       <NotePicker value={target} onChange={setTarget} />
       <div className="add-actions">
         {!initial && (
@@ -131,12 +166,13 @@ function WordForm({ noteId, initial }: { noteId: string | null; initial?: string
 function ListForm({ noteId }: { noteId: string | null }) {
   const [text, setText] = useState("");
   const [target, setTarget] = useState(noteId);
+  const [bothWays, setBothWays] = useState(false);
   const pairs = text.split("\n").map(pairOf).filter((p): p is [string, string] => !!p);
   const add = () => {
     if (!pairs.length) return;
-    vault.addCards(pairs, target);
+    vault.addCards(pairs, target, bothWays);
     haptic("success");
-    toast(`Added ${pairs.length} ${pairs.length === 1 ? "word" : "words"}`);
+    toast(`Added ${pairs.length} ${pairs.length === 1 ? "word" : "words"}${bothWays ? " both ways" : ""}`);
     close();
   };
   return (
@@ -161,6 +197,11 @@ function ListForm({ noteId }: { noteId: string | null }) {
           "Copied from a textbook, a spreadsheet or a website: anything with a word and its meaning on each line."
         )}
       </p>
+      <BothWays
+        on={bothWays}
+        onChange={setBothWays}
+        hint="Each pair also gets a card that shows the meaning and asks for the word."
+      />
       <NotePicker value={target} onChange={setTarget} />
       <div className="add-actions">
         <button className="btn btn-primary btn-lg" onClick={add} disabled={!pairs.length}>

@@ -1,7 +1,8 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Download, ClipboardCopy, GraduationCap, Upload, RotateCcw, Smartphone, Sparkles, Share, Sun, Moon, MonitorSmartphone, X } from "lucide-react";
+import Link from "next/link";
+import { Download, ClipboardCopy, GraduationCap, Upload, RotateCcw, Smartphone, Sparkles, Share, Sun, Moon, MonitorSmartphone, Type, X } from "lucide-react";
 import VoiceList from "@/components/Voices";
 import { download } from "@/components/CommandPalette";
 import { toast, useVault, vault } from "@/lib/store";
@@ -307,6 +308,9 @@ export default function SettingsPage() {
           <button className="btn" onClick={() => setUI({ onboarding: true })}>
             <GraduationCap size={14} /> Take the tour
           </button>
+          <Link className="btn" href="/formatting">
+            <Type size={14} /> Formatting guide
+          </Link>
           <button className="btn" onClick={() => vault.updateSettings({ onboarded: false })}>
             <Sparkles size={14} /> Show the welcome again
           </button>

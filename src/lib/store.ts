@@ -434,17 +434,18 @@ export const vault = {
    * Add a flashcard without writing any syntax. It goes to `noteId`, or to the words note for the
    * language being learned (created on first use). Returns the note it was saved to.
    */
-  addCard(front: string, back: string, noteId?: string | null) {
-    return vault.addCards([[front, back]], noteId);
+  addCard(front: string, back: string, noteId?: string | null, bothWays = false) {
+    return vault.addCards([[front, back]], noteId, bothWays);
   },
 
-  /** Several cards at once (a pasted word list), into one note. */
-  addCards(pairs: Array<[string, string]>, noteId?: string | null) {
+  /** Several cards at once (a pasted word list), into one note. Both ways writes ":::", which also asks meaning → word. */
+  addCards(pairs: Array<[string, string]>, noteId?: string | null, bothWays = false) {
     const clean = (t: string) => t.replace(/\s*:{2,}\s*/g, " ").replace(/\s+/g, " ").trim();
+    const sep = bothWays ? " ::: " : " :: ";
     const title = wordsNoteTitle();
     let id = noteId && state.notes[noteId] ? noteId : Object.values(state.notes).find((n) => n.path === title)?.id;
     if (!id) id = vault.createNote({ title, content: "", open: false });
-    vault.appendLine(id, pairs.map(([f, b]) => `${clean(f)} :: ${clean(b)}`).join("\n"));
+    vault.appendLine(id, pairs.map(([f, b]) => `${clean(f)}${sep}${clean(b)}`).join("\n"));
     return id;
   },
 

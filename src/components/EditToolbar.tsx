@@ -1,11 +1,13 @@
 "use client";
 
 import { useSyncExternalStore, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import {
-  BookA, Bold, ChevronDown, Hash, Heading2, IndentDecrease, IndentIncrease, Italic, Layers, Link2, ListChecks, Redo2,
-  SpellCheck, Undo2, Volume2,
+  BookA, Bold, ChevronDown, CircleQuestionMark, Hash, Heading2, IndentDecrease, IndentIncrease, Italic, Layers, Link2,
+  ListChecks, Redo2, SpellCheck, Undo2, Volume2, WandSparkles,
 } from "lucide-react";
-import { useUI } from "@/lib/ui";
+import { setUI, useUI } from "@/lib/ui";
+import { getVault } from "@/lib/store";
 import type { EditorView } from "@codemirror/view";
 import { redo, undo } from "@codemirror/commands";
 import { activeEditor, indent, insertText, toggleLinePrefix, wrap } from "@/lib/cm";
@@ -45,8 +47,17 @@ function Tool({ label, onPress, wide, children }: { label: string; onPress: (vie
   );
 }
 
+/** Format: hide the keyboard and open the sheet that hands this note to an AI assistant. */
+function format(view: EditorView) {
+  const noteId = getVault().workspace.active;
+  if (!noteId) return;
+  view.contentDOM.blur();
+  setUI({ format: { noteId } });
+}
+
 export default function EditToolbar() {
   const { editorFocused } = useUI();
+  const router = useRouter();
   const inset = useSyncExternalStore(subscribe, keyboardInset, () => 0);
   if (!editorFocused) return null;
 
@@ -59,6 +70,9 @@ export default function EditToolbar() {
         </Tool>
         <Tool label="Link" onPress={(v) => wrap(v, "[[", "]]")} wide>
           <Link2 size={17} /> Link
+        </Tool>
+        <Tool label="Format" onPress={format} wide>
+          <WandSparkles size={17} /> Format
         </Tool>
         <span className="tool-sep" />
         <Tool label="Undo" onPress={(v) => { undo(v); v.focus(); }}>
@@ -104,6 +118,15 @@ export default function EditToolbar() {
         </Tool>
         <Tool label="Outdent" onPress={(v) => indent(v, true)}>
           <IndentDecrease size={18} />
+        </Tool>
+        <Tool
+          label="Formatting guide"
+          onPress={(v) => {
+            v.contentDOM.blur();
+            router.push("/formatting");
+          }}
+        >
+          <CircleQuestionMark size={18} />
         </Tool>
       </div>
       <Tool label="Hide keyboard" onPress={(v) => v.contentDOM.blur()}>

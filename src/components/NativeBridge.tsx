@@ -25,6 +25,7 @@ export default function NativeBridge() {
         if (ui.explain) return setUI({ explain: null });
         if (ui.newWords) return setUI({ newWords: null });
         if (ui.addWord) return setUI({ addWord: null });
+        if (ui.format) return setUI({ format: null });
         if (ui.onboarding) return setUI({ onboarding: false });
         if (ui.palette) return setUI({ palette: null });
         if (ui.sheet) return setUI({ sheet: null });

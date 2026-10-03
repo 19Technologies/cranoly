@@ -31,6 +31,8 @@ import {
   SpellCheck,
   Volume2,
   ScanText,
+  Type,
+  WandSparkles,
 } from "lucide-react";
 import { checkWriting, explain, findNewWords, hear, makeCards, withEditor } from "@/lib/smart";
 import { folderOf, titleOf } from "@/lib/vault";
@@ -94,6 +96,7 @@ function Palette({ mode }: { mode: "commands" | "notes" }) {
       { id: "export", label: "Export vault as JSON", icon: <Download size={15} />, run: () => download("cranoly-vault.json", vault.exportJSON()) },
       { id: "settings", label: "Open settings", icon: <Settings size={15} />, run: go("/settings") },
       { id: "learn", label: "Learn the basics: take the tour", icon: <GraduationCap size={15} />, run: () => setUI({ onboarding: true }) },
+      { id: "formatting", label: "Formatting guide: everything you can write", icon: <Type size={15} />, run: go("/formatting") },
     ];
     if (activeNote) {
       const count = cardsOf(notes).filter((c) => c.noteId === activeNote.id).length;
@@ -102,6 +105,7 @@ function Palette({ mode }: { mode: "commands" | "notes" }) {
         { id: "edit", label: "Editing view", icon: <PenLine size={15} />, hint: "⌘E", run: () => { vault.setMode("edit"); router.push("/"); } },
         { id: "split", label: "Split view: edit and preview", icon: <Columns2 size={15} />, run: () => { vault.setMode("split"); router.push("/"); } },
         { id: "rename", label: `Rename “${titleOf(activeNote.path)}”`, icon: <TextCursorInput size={15} />, run: () => { setUI({ pendingRename: activeNote.id }); router.push("/"); } },
+        { id: "format", label: "Format this note with AI", icon: <WandSparkles size={15} />, run: () => setUI({ format: { noteId: activeNote.id } }) },
         { id: "check", label: "Check my writing", icon: <SpellCheck size={15} />, run: () => { router.push("/"); withEditor(checkWriting); } },
         { id: "explain", label: "Explain the selected word", icon: <BookA size={15} />, run: () => { router.push("/"); withEditor(explain); } },
         { id: "hear", label: "Hear the selected text", icon: <Volume2 size={15} />, run: () => withEditor(hear) },

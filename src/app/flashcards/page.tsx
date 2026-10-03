@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Flame, Layers, Play, Shuffle, CalendarCheck, CalendarClock, FileText, Hourglass } from "lucide-react";
 import { buildDecks } from "@/lib/cards";
+import { cardExamples } from "@/lib/languages";
 import { fromRecentNotes, heatmap, notSeenLately, streak } from "@/lib/study";
 import { useCards, useVault } from "@/lib/store";
 import { parseDay, useToday } from "@/lib/useToday";
@@ -48,7 +49,8 @@ function Heatmap({ activity, today }: { activity: Record<string, number>; today:
 }
 
 export default function FlashcardsPage() {
-  const { activity, seen, notes } = useVault();
+  const { activity, seen, notes, settings } = useVault();
+  const ex = cardExamples(settings.learning, settings.native);
   const cards = useCards();
   const today = useToday();
   const router = useRouter();
@@ -197,17 +199,21 @@ export default function FlashcardsPage() {
             <h2>Writing cards</h2>
           </div>
           <dl>
-            <dt><code>Hallo :: Hello</code></dt>
-            <dd>One card</dd>
-            <dt><code>der Hund ::: the dog</code></dt>
-            <dd>Two cards, one each way</dd>
-            <dt><code>Ich ==bin== müde.</code></dt>
-            <dd>Cloze: the highlight gets hidden</dd>
-            <dt><code>Question<br />?<br />Answer</code></dt>
-            <dd>Multi-line (use <code>??</code> for both ways)</dd>
+            <dt><code>{ex.one.code}</code></dt>
+            <dd>One card. Shows {ex.one.front}, you answer {ex.one.back}.</dd>
+            <dt><code>{ex.both.code}</code></dt>
+            <dd>Two cards. One asks the meaning, one asks the word.</dd>
+            <dt><code>{ex.gap.code}</code></dt>
+            <dd>Fill the gap. Hides {ex.gap.hidden}, you fill it in.</dd>
+            <dt><code className="cheatsheet-lines">{ex.question.code}</code></dt>
+            <dd>A long question. The line with ? splits it from the answer, and <code>??</code> makes it two-way.</dd>
             <dt><code>#flashcards/Travel</code></dt>
-            <dd>Put the note&apos;s cards in a deck of your choice</dd>
+            <dd>Puts the note&apos;s cards in a deck of your choice.</dd>
           </dl>
+          <p className="cheatsheet-note">
+            <b>Answer first</b> in practice flips every card for that session. Everything you can write is in the{" "}
+            <Link href="/formatting">Formatting guide</Link>.
+          </p>
         </section>
       </div>}
     </div>

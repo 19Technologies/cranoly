@@ -63,6 +63,28 @@ export const LANGUAGES: Language[] = [
 
 export const languageOf = (code: string) => LANGUAGES.find((l) => l.code === code) ?? LANGUAGES[0];
 
+/**
+ * Sample card lines in the learner's own language, for the tour, the help and the Formatting guide,
+ * so no screen shows fixed German. Every language's starter words mean dog, house, water and thanks,
+ * and greet[0] means "good morning". Meanings come from the learner's own language, else English.
+ */
+export function cardExamples(learning: string, native: string) {
+  const l = languageOf(learning);
+  const en = LANGUAGES.find((x) => x.code === "en")!;
+  const g = (native !== l.code && LANGUAGES.find((x) => x.code === native)) || en;
+  const word = (lang: Language, i: number) => lang.starter?.[i] ?? en.starter![i];
+  const morning = l.greet?.[0] ?? l.hello;
+  const cut = morning.lastIndexOf(" ");
+  const hidden = cut > 0 ? morning.slice(cut + 1) : morning;
+  const ask = `How do you say “${word(g, 3)}”?`;
+  return {
+    one: { code: `${l.hello} :: ${g.hello}`, front: l.hello, back: g.hello },
+    both: { code: `${word(l, 0)} ::: ${word(g, 0)}`, front: word(l, 0), back: word(g, 0) },
+    gap: { code: cut > 0 ? `${morning.slice(0, cut + 1)}==${hidden}==` : `==${hidden}==`, hidden },
+    question: { code: `${ask}\n?\n${word(l, 3)}`, front: ask, back: word(l, 3) },
+  };
+}
+
 /** The device's language, as one of ours (falls back to English). */
 export function deviceLanguage() {
   if (typeof navigator === "undefined") return "en";

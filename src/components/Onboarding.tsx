@@ -3,7 +3,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, BookA, GraduationCap, Moon, MonitorSmartphone, SpellCheck, Sun, Volume2, X } from "lucide-react";
-import { LANGUAGES } from "@/lib/languages";
+import { LANGUAGES, cardExamples } from "@/lib/languages";
 import { useVault, vault } from "@/lib/store";
 import { setUI, useUI } from "@/lib/ui";
 import { useSlider } from "@/lib/useSlider";
@@ -40,21 +40,43 @@ function DemoLinks() {
 }
 
 function DemoCards() {
-  const rows: Array<[string, string, string]> = [
-    ["Hallo :: Hello", "one card", "sun"],
-    ["der Hund ::: the dog", "two cards, both ways", "sky"],
-    ["Ich ==bin== müde", "fill the gap", "lilac"],
-    ["Question / ? / Answer", "multi-line card", "peach"],
+  const { settings } = useVault();
+  const ex = cardExamples(settings.learning, settings.native);
+  const rows: Array<[string, string, string, string]> = [
+    [ex.one.code, "One card", `Shows ${ex.one.front}. You answer ${ex.one.back}.`, "sun"],
+    [ex.both.code, "Two cards", "One asks the meaning, one asks the word.", "sky"],
+    [ex.gap.code, "Fill the gap", `Hides ${ex.gap.hidden}. You fill it in.`, "lilac"],
+    [ex.question.code, "Long question", "The line with ? splits the question from the answer.", "peach"],
   ];
   return (
     <div className="ob-demo ob-demo-list" aria-hidden>
-      {rows.map(([code, label, tint]) => (
-        <div key={code} className="ob-syntax">
-          <code>{code}</code>
+      {rows.map(([code, label, line, tint]) => (
+        <div key={label} className="ob-syntax">
+          <span className="ob-syntax-text">
+            <code>{code}</code>
+            <small>{line}</small>
+          </span>
           <span className={`ob-pill tint-${tint}`}>{label}</span>
         </div>
       ))}
     </div>
+  );
+}
+
+/** Closes the tour and opens the Formatting guide. */
+function GuideLink() {
+  const router = useRouter();
+  return (
+    <button
+      type="button"
+      className="ob-link"
+      onClick={() => {
+        setUI({ onboarding: false });
+        router.push("/formatting");
+      }}
+    >
+      Formatting guide
+    </button>
   );
 }
 
@@ -236,7 +258,12 @@ const STEPS: Step[] = [
   {
     eyebrow: "Step 2 · Flashcards",
     title: "Write cards as you write notes.",
-    body: "Any line can be a flashcard. Cards are gathered into decks automatically, named after the note's folder.",
+    body: (
+      <>
+        Any line can be a flashcard, and cards gather into decks named after the note&apos;s folder. <b>Answer first</b>{" "}
+        in practice flips any card the other way. Everything you can write is in the <GuideLink />.
+      </>
+    ),
     demo: <DemoCards />,
   },
   {

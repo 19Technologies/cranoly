@@ -1,4 +1,4 @@
-# Cranoly — Style Reference
+# Cranoly Style Reference
 > a sticker notebook for words, on warm paper
 
 **Theme:** light (Paper) and dark (Graphite)
@@ -9,7 +9,7 @@
 
 Cranoly feels like a paper notebook with stickers on it: warm cream pages, black ink outlines, and bright cut-out pieces that cast a small hard shadow, like card lifted off the page. Orange marks the main thing to do and where you are. Yellow marks what's chosen and what you're learning. Green is only for links. Every touch answers with a small spring: things squish when pressed, selections slide instead of jumping, and main buttons' labels tumble. The app stays calm enough to write in.
 
-## Tokens — Colors
+## Colours
 
 ### Paper (light)
 
@@ -69,22 +69,25 @@ Orange, Sun, Sky, Lilac and Peach are the same in both themes. Text on them is a
 
 The Map is due a redesign; until then, these are its colours.
 
-## Tokens — Typography
+## Typography
 
-### Fraunces — headings, titles and the flashcard word · `--font-heading`
+### Fraunces · `--font-heading`
+- **Used for:** headings, titles and the flashcard word
 - **Axes:** `"SOFT" 100, "WONK" 0` everywhere (set on `body`), for the roundest, friendliest letters
 - **Weights:** 700 (small headings), 750 (note titles, section headings), 800 (greetings, welcome titles, card titles, flashcard words)
 - **Letter spacing:** -0.03em by default; -0.04em on the largest sizes; -0.02em on small ones
 - **Line height:** 1 to 1.02 for titles
 - **Role:** the voice of the app. Sentence case, never all caps
 
-### Instrument Sans — everything else · `--font-text`
+### Instrument Sans · `--font-text`
+- **Used for:** everything that isn't a heading: UI, note text, buttons and labels
 - **Size:** 14.5px for UI; 16px for note text (`--font-text-size`); 12–13px for small text (`--font-ui-smaller`, `--font-ui-small`)
 - **Weights:** 500 (fields), 550 (sidebar rows), 600 (chips, toasts), 650 (buttons, segmented items, tab labels, the selection bar), 700 (labels, the chosen sidebar row, language pills), 750 (Flashcard and Link in the selection bar)
 - **Labels:** section labels are 13px 700 uppercase with +0.06em tracking, in muted ink. The flashcard's kind label is 12px 700 uppercase with +0.08em
 - **Numbers that change** (counts, streaks, timers) use tabular figures (`font-variant-numeric: tabular-nums`), so digits don't jitter
 
-### Geist Mono — code and keyboard hints only · `--font-monospace`
+### Geist Mono · `--font-monospace`
+- **Used for:** code and keyboard hints only
 
 ### Type Scale
 
@@ -94,17 +97,17 @@ The Map is due a redesign; until then, these are its colours.
 | greeting | Fraunces | 800 | 34–48px (`clamp(34px, 9vw, 48px)`) | 1 | -0.04em | Home |
 | welcome title | Fraunces | 800 | 30–40px (`clamp(30px, 8vw, 40px)`) | 1.02 | -0.04em | `.wc-title` |
 | flashcard word | Fraunces | 800 | 34–48px (`clamp(34px, 5vw, 48px)`) | 1 | -0.04em | short answers on the card |
-| card title | Fraunces | 800 | 26px | — | -0.03em | the Practice card |
-| word of the day | Fraunces | 700 | 24px | — | -0.03em | Home |
-| language name | Fraunces | 700 | 19px | — | -0.02em | welcome tiles |
-| practice bar | Fraunces | 750 | 18px | — | -0.02em | the deck name while practising |
-| note text | Instrument Sans | 400 | 16px | — | 0 | the editor |
-| ui | Instrument Sans | 500 | 14.5px | — | 0 | everywhere else |
+| card title | Fraunces | 800 | 26px |  | -0.03em | the Practice card |
+| word of the day | Fraunces | 700 | 24px |  | -0.03em | Home |
+| language name | Fraunces | 700 | 19px |  | -0.02em | welcome tiles |
+| practice bar | Fraunces | 750 | 18px |  | -0.02em | the deck name while practising |
+| note text | Instrument Sans | 400 | 16px |  | 0 | the editor |
+| ui | Instrument Sans | 500 | 14.5px |  | 0 | everywhere else |
 | button | Instrument Sans | 650 | 14px (large 16px) | 1 | 0 | `.btn` |
 | label | Instrument Sans | 700 | 13px | 1 | +0.06em, uppercase | Home section labels |
-| small | Instrument Sans | 500 | 12–13px | — | 0 | metadata, hints |
+| small | Instrument Sans | 500 | 12–13px |  | 0 | metadata, hints |
 
-## Tokens — Spacing & Shapes
+## Spacing and shapes
 
 **Spacing:** no fixed scale; gaps and padding step through 6, 8, 10, 12, 14, 16, 18 and 22px · **Density:** comfortable in lists, roomy on Home and in the welcome
 
@@ -268,7 +271,7 @@ Slush's secret is that motion **lands fast and settles playfully**. Its main cur
 6. **Transform, opacity and colour only.** Never animate layout on content, so it stays at 60fps on a budget phone like a Galaxy A23.
 7. **Interruptible.** Use transitions, not one-shot animations, wherever a user can change their mind mid-motion.
 
-### Tokens — Curves
+### Curves
 
 | Name | Value | Token | Use |
 |------|-------|-------|-----|
@@ -282,7 +285,7 @@ Slush's secret is that motion **lands fast and settles playfully**. Its main cur
 
 Browsers without `linear()` (before Chrome 113 or Safari 17.2) get the nearest `cubic-bezier` for Elastic, Glide and Bounce.
 
-### Tokens — Durations
+### Durations
 
 | Name | Value | Token | Use |
 |------|-------|-------|-----|
@@ -309,18 +312,18 @@ Browsers without `linear()` (before Chrome 113 or Safari 17.2) get the nearest `
 | **Sidebar** selection changed | the grey highlight | glide · glide | The same stretch |
 | **Home languages, phone folder pills** changed | the Sun pill | glide · glide | The same stretch |
 | **Tab bar** changed | the orange pill slides under the new icon; the icon pops from `scale: .7` | glide · glide; pop · bounce | A light haptic tap in the Android app |
-| **Chip** turned on | Sun fill; the chip pops from `scale: .92` | color · color; pop · bounce | — |
-| **Language tile** picked | Sun fill; the corner check pops in from `scale: 0` and `rotate: -25deg` | color · color; pop · bounce | — |
+| **Chip** turned on | Sun fill; the chip pops from `scale: .92` | color · color; pop · bounce |  |
+| **Language tile** picked | Sun fill; the corner check pops in from `scale: 0` and `rotate: -25deg` | color · color; pop · bounce |  |
 | **Primary button** hover (pointer devices) | label tumbles: the front face goes to `rotate: 1 0 0 85deg`, `translate: 0 -0.95em -1.5em` and fades; the back face (CSS text only) springs in from `rotate: 1 0 0 -90deg`, `translate: 0 0.95em -1.5em` | medium (travel) and default (turn) · elastic; fade 150ms out, 75ms in | Slush's button, applied to the label inside a clipped pill with 500px perspective. On Start, Add a word, Get started, Continue, Download, Add word, Save, New note and Start using Cranoly |
 | **Round button** hover | ＋ and ⚙ `rotate: 90deg` | press · elastic | The phone ＋ and Home's ⚙ also turn when pressed |
-| Logo hover | `rotate: 360deg` | long · elastic | — |
-| Arrow in a button or row, hover | `translate: 3px 0` | press · elastic | — |
+| Logo hover | `rotate: 360deg` | long · elastic |  |
+| Arrow in a button or row, hover | `translate: 3px 0` | press · elastic |  |
 | **Theme** switched | the theme icon spins in from `rotate: -120deg`, `scale: .6` | default · elastic | Colours change over color · color |
-| **Selection bar** appears | `scale: .92 → 1` from its bottom centre, fading in | press · elastic | — |
+| **Selection bar** appears | `scale: .92 → 1` from its bottom centre, fading in | press · elastic |  |
 | **Dialog** opens (desktop) | `scale: .96 → 1`, fading in | press · elastic | The backdrop fades over 150ms |
-| **Sheet** opens (phones) | rises from below the screen | sheet · sheet | — |
+| **Sheet** opens (phones) | rises from below the screen | sheet · sheet |  |
 | **Menu** opens | `scale: .94 → 1` from its top-left corner, fading in | press · elastic | Items rise 4px over 320ms on Out, 12ms apart; the tenth item onwards arrives together |
-| **Toast** arrives | rises 14px from `scale: .96`, fading in | press · elastic | — |
+| **Toast** arrives | rises 14px from `scale: .96`, fading in | press · elastic |  |
 | **Flashcard** flips | `rotateY(180deg)` | medium · glide | In practice and in the welcome. The 5% overshoot reads as a real card settling |
 
 ### Choreography rules

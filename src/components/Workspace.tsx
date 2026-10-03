@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   BookOpen, ChevronLeft, ClipboardCopy, Columns2, Command, GitFork, Layers, Link2, MoreHorizontal, PanelRight, PenLine, Pin, PinOff,
-  Plus, ListPlus, ScanText, Sparkles, SpellCheck, SquarePen, TextCursorInput, Trash2,
+  Plus, ListPlus, ScanText, Sparkles, SpellCheck, SquarePen, TextCursorInput, Trash2, WandSparkles,
 } from "lucide-react";
 import { Note, ViewMode, titleOf } from "@/lib/vault";
 import { cardsOf, toast, useVault, vault } from "@/lib/store";
@@ -211,6 +211,8 @@ function NoteMenu({ note, onClose }: { note: Note; onClose: () => void }) {
   }
   return (
     <div className="sheet-list">
+      {item(<WandSparkles size={16} />, "Format with AI", () => { onClose(); setUI({ format: { noteId: note.id } }); })}
+      <span className="menu-sep" />
       {item(<BookOpen size={16} />, "Reading view", setMode("read"), mode === "read" ? " is-current" : "")}
       {item(<PenLine size={16} />, "Editing view", setMode("edit"), mode === "edit" ? " is-current" : "")}
       <span className="only-wide-flex">{item(<Columns2 size={16} />, "Split: edit and preview", setMode("split"), mode === "split" ? " is-current" : "")}</span>
@@ -259,6 +261,9 @@ function NoteToolbar({ note, mode }: { note: Note; mode: ViewMode }) {
       {tool("Scan text into this note", <ScanText size={17} />, () => setUI({ scan: { noteId: note.id } }))}
       {tool("Check my writing", <SpellCheck size={17} />, () => withEditor(checkWriting))}
       {tool("Find new words", <Sparkles size={17} />, () => withEditor(findNewWords))}
+      <button className="btn tb-format" title="Format this note with AI" onClick={() => setUI({ format: { noteId: note.id } })}>
+        <WandSparkles size={15} /> Format
+      </button>
       <span className="tb-space" />
       {tool(
         "Links, cards and outline",

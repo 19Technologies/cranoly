@@ -20,6 +20,7 @@ import NativeBridge from "./NativeBridge";
 import NewWordsSheet from "./NewWordsSheet";
 import Welcome from "./Welcome";
 import AddWord from "./AddWord";
+import FormatSheet from "./FormatSheet";
 import ScanSheet from "./ScanSheet";
 
 function Toasts() {
@@ -244,6 +245,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
       <Onboarding />
       <Welcome />
       <AddWord />
+      <FormatSheet />
       <ScanSheet />
       <WordSheet />
       <NewWordsSheet />
