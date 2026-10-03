@@ -27,20 +27,28 @@ interface Section {
   more?: ReactNode;
 }
 
+function CalloutList({ main }: { main: boolean }) {
+  return (
+    <ul>
+      {CALLOUTS.filter((c) => !!c.main === main).map((c) => (
+        <li key={c.type}>
+          <MarkdownView content={`> [!${c.type}] ${c.type}`} interactive={false} />
+          {c.also.length > 0 && <span className="fmt-also">also {c.also.join(", ")}</span>}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 /** Every callout type, drawn as it looks, with the other names that give the same box. */
 function CalloutTypes() {
   return (
     <div className="fmt-callouts">
-      <h3>All the callout types</h3>
-      <p className="fmt-intro">Put any of these between [! and ]. Names on the same box look the same.</p>
-      <ul>
-        {CALLOUTS.map((c) => (
-          <li key={c.type}>
-            <MarkdownView content={`> [!${c.type}] ${c.type}`} interactive={false} />
-            {c.also.length > 0 && <span className="fmt-also">also {c.also.join(", ")}</span>}
-          </li>
-        ))}
-      </ul>
+      <h3>Callout types</h3>
+      <p className="fmt-intro">Put any of these between [! and ]. Each has its own colour and icon.</p>
+      <CalloutList main />
+      <h3 className="fmt-more">More types</h3>
+      <CalloutList main={false} />
     </div>
   );
 }
