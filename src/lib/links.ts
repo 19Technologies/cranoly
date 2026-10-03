@@ -169,6 +169,7 @@ export function rewriteLinks(content: string, oldPath: string, newPath: string) 
 export function stripInline(line: string) {
   return line
     .replace(/^\s*(?:>\s*)*(?:[-*+]\s+|\d+[.)]\s+)?(?:\[[ xX]\]\s+)?/, "")
+    .replace(/^\[![\w-]+\][+-]?\s*/, "") // a callout's "[!tip]", leaving its title
     .replace(/(\*\*|__|==|~~|`)(.+?)\1/g, "$2")
     .replace(/(^|\W)[*_](\S.*?)[*_](?=\W|$)/g, "$1$2");
 }

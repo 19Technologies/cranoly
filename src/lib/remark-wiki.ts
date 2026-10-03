@@ -1,4 +1,5 @@
 // remark plugin: [[wikilinks]], ==highlights==, #tags, > [!callouts] and flashcard lines.
+import { CALLOUT_RE, calloutTitle } from "./callouts";
 import { parseWikiInner } from "./links";
 
 interface MdNode {
@@ -137,17 +138,21 @@ function markCallouts(node: MdNode) {
   if (node.type !== "blockquote") return;
   const para = node.children[0];
   const first = para?.type === "paragraph" ? para.children?.[0] : undefined;
-  const m = first?.type === "text" ? /^\[!([\w-]+)\][+-]?[ \t]*([^\n]*)\n?/.exec(first.value!) : null;
+  const m = first?.type === "text" ? CALLOUT_RE.exec(first.value!) : null;
   if (!para || !first || !m) return;
   const kind = m[1].toLowerCase();
-  first.value = first.value!.slice(m[0].length);
+  const fold = m[2];
+  first.value = first.value!.slice(m[0].length).replace(/^\n/, "");
   if (!first.value) para.children!.shift();
-  const title = m[2] || kind.charAt(0).toUpperCase() + kind.slice(1);
-  node.data = { hProperties: { className: ["callout"], "data-callout": kind } };
+  // "+" and "-" make it fold: a <details> that starts open or shut, its title the <summary>.
+  node.data = {
+    ...(fold ? { hName: "details" } : {}),
+    hProperties: { className: ["callout"], "data-callout": kind, ...(fold === "+" ? { open: true } : {}) },
+  };
   node.children.unshift({
     type: "kbCalloutTitle",
-    data: { hName: "div", hProperties: { className: ["callout-title"] } },
-    children: [text(title)],
+    data: { hName: fold ? "summary" : "div", hProperties: { className: ["callout-title"] } },
+    children: [text(m[3] || calloutTitle(kind))],
   });
   if (!para.children!.length) node.children.splice(1, 1);
 }

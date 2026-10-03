@@ -15,6 +15,7 @@ import {
 } from "@codemirror/language";
 import { tags as t } from "@lezer/highlight";
 import { GFM, parser } from "@lezer/markdown";
+import { CALLOUT_RE, calloutTitle } from "./callouts";
 import { TAG_RE, WIKI_RE, parseWikiInner, tintFor } from "./links";
 
 // Markdown + GitHub extras (tables, task lists, strikethrough), without the HTML/JS/CSS parsers
@@ -101,6 +102,26 @@ class ArrowWidget extends WidgetType {
     return arrow;
   }
 }
+/** "[!tip]" drawn as the callout's icon, with its title when you didn't write one. */
+class CalloutWidget extends WidgetType {
+  constructor(readonly title: string) {
+    super();
+  }
+  eq(other: CalloutWidget) {
+    return other.title === this.title;
+  }
+  toDOM() {
+    const head = document.createElement("span");
+    head.className = "cm-callout-title";
+    head.textContent = this.title;
+    return head;
+  }
+}
+
+/** A callout's lines: the first one carries the title, the last one closes the box. */
+const calloutLine = (kind: string, part: string) =>
+  Decoration.line({ class: `cm-callout-line${part}`, attributes: { "data-callout": kind } });
+
 const ONE_WAY = Decoration.replace({ widget: new ArrowWidget("→") });
 const TWO_WAY = Decoration.replace({ widget: new ArrowWidget("⇄") });
 const CARD_BACK = Decoration.mark({ class: "cm-card-back" });
@@ -121,6 +142,7 @@ function build(view: EditorView, exists: (target: string) => boolean): Decoratio
     if (to > from) out.push(HIDE.range(from, to));
   };
   const code: Array<[number, number]> = [];
+  const calloutHeads = new Set<number>();
   const inCode = (pos: number) => code.some(([a, b]) => pos >= a && pos < b);
 
   const vis = view.visibleRanges;
@@ -154,14 +176,33 @@ function build(view: EditorView, exists: (target: string) => boolean): Decoratio
         return;
       }
       if (name === "Blockquote") {
+        // "> [!tip] Title" makes the whole quote a callout box.
+        const head = doc.lineAt(node.from);
+        const mark = /^\s*>\s?/.exec(head.text);
+        const callout = mark && node.node.parent?.name === "Document" ? CALLOUT_RE.exec(head.text.slice(mark[0].length)) : null;
+        const last = doc.lineAt(node.to).from;
         for (let pos = node.from; pos <= node.to; ) {
           const line = doc.lineAt(pos);
-          out.push(QUOTE_LINE.range(line.from));
+          if (callout) {
+            const part = `${line.from === head.from ? " cm-callout-head" : ""}${line.from === last ? " cm-callout-tail" : ""}`;
+            out.push(calloutLine(callout[1].toLowerCase(), part).range(line.from));
+          } else out.push(QUOTE_LINE.range(line.from));
           pos = line.to + 1;
+        }
+        if (callout) calloutHeads.add(head.from);
+        if (callout && !onLine(head.from)) {
+          // Hide "> [!tip]+ " and show the icon (and the type's name when there's no title).
+          const start = head.from + mark![0].length;
+          const typed = callout[0].length - callout[3].length;
+          out.push(
+            Decoration.replace({
+              widget: new CalloutWidget(callout[3] ? "" : calloutTitle(callout[1])),
+            }).range(head.from, start + typed),
+          );
         }
         return;
       }
-      if (name === "QuoteMark" && !onLine(node.from)) {
+      if (name === "QuoteMark" && !onLine(node.from) && !calloutHeads.has(doc.lineAt(node.from).from)) {
         hide(node.from, node.to + (doc.sliceString(node.to, node.to + 1) === " " ? 1 : 0));
         return;
       }

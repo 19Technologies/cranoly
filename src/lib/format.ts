@@ -1,6 +1,7 @@
 // Format: hand a note to Claude, ChatGPT or Gemini with a ready prompt, then paste the answer back.
 // Cranoly runs no AI itself. The note leaves the device only when the learner taps the button,
 // and only to the assistant they picked.
+import { CALLOUTS } from "./callouts";
 import type { Assistant } from "./vault";
 
 export type FormatTask = "tidy" | "arrange" | "summary" | "cards";
@@ -9,7 +10,8 @@ export const TASKS: Array<{ id: FormatTask; label: string; ask: (native: string)
   {
     id: "tidy",
     label: "Tidy up",
-    ask: () => "Tidy it up: add clear headings and turn runs of items into lists. Keep my wording.",
+    ask: () =>
+      "Tidy it up: add clear headings, turn runs of items into lists, and put tips, warnings and examples in callouts. Keep my wording.",
   },
   {
     id: "arrange",
@@ -61,8 +63,9 @@ export function buildPrompt(
     "",
     "Rules:",
     "- Keep every language exactly as I wrote it. Don't translate or correct anything unless a task above asks for it.",
-    '- Keep these exactly as they are: flashcard lines with "::" or ":::", lines that are only "?" or "??", ==highlights==, [[links]] and #tags.',
-    "- Use only this Markdown: # headings, **bold**, *italic*, ~~strikethrough~~, - lists, 1. numbered lists, - [ ] checklists, > quotes, --- lines and `code`.",
+    '- Keep these exactly as they are: flashcard lines with "::" or ":::", lines that are only "?" or "??", ==highlights==, [[links]], #tags and callouts.',
+    "- Use only this Markdown: # headings, **bold**, *italic*, ~~strikethrough~~, - lists, 1. numbered lists, - [ ] checklists, > quotes, > [!type] callouts, --- lines and `code`.",
+    `- A callout is a quote whose first line is "> [!type]" or "> [!type] Title", with every line after it starting with ">". The types are ${CALLOUTS.map((c) => c.type).join(", ")}. Put - after the type ("> [!question]-") to fold it shut, or + to fold it open.`,
     "- Reply with only the formatted note, in Markdown. No introduction, no explanation, no code block around it.",
     "",
     `The note is called "${note.title}":`,

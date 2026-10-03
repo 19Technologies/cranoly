@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { RotateCcw } from "lucide-react";
 import MarkdownView from "@/components/MarkdownView";
 import TryEditor from "@/components/TryEditor";
+import { CALLOUTS } from "@/lib/callouts";
 import { cardExamples, languageOf } from "@/lib/languages";
 import { useVault } from "@/lib/store";
 
@@ -22,6 +23,26 @@ interface Section {
   title: string;
   intro?: string;
   rows: Row[];
+  /** Anything that follows the rows. */
+  more?: ReactNode;
+}
+
+/** Every callout type, drawn as it looks, with the other names that give the same box. */
+function CalloutTypes() {
+  return (
+    <div className="fmt-callouts">
+      <h3>All the callout types</h3>
+      <p className="fmt-intro">Put any of these between [! and ]. Names on the same box look the same.</p>
+      <ul>
+        {CALLOUTS.map((c) => (
+          <li key={c.type}>
+            <MarkdownView content={`> [!${c.type}] ${c.type}`} interactive={false} />
+            {c.also.length > 0 && <span className="fmt-also">also {c.also.join(", ")}</span>}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
 }
 
 function Rows({ rows }: { rows: Row[] }) {
@@ -96,9 +117,22 @@ export default function FormattingPage() {
       title: "Quotes, lines and code",
       rows: [
         { type: "> An example sentence" },
+        {
+          type: `> [!tip]\n> **${ex.one.front}** means *${ex.one.back}*.`,
+          note: "A callout: a quote that becomes a coloured box. The word between [! and ] picks the colour and icon.",
+        },
+        {
+          type: "> [!warning] False friends\n> Some words look like English but mean something else.",
+          note: "Text after the type becomes the title.",
+        },
+        {
+          type: `> [!question]- ${ex.question.front}\n> ${ex.question.back}`,
+          note: "A - after the type folds it shut, so you can test yourself. Tap the title to open it. A + folds it but starts open.",
+        },
         { type: "---", note: "A line across the note." },
         { type: "```\nA block of code\n```" },
       ],
+      more: <CalloutTypes />,
     },
     {
       title: "Links and tags",
@@ -163,6 +197,7 @@ export default function FormattingPage() {
           </div>
           {s.intro && <p className="fmt-intro">{s.intro}</p>}
           <Rows rows={s.rows} />
+          {s.more}
         </section>
       ))}
     </div>
