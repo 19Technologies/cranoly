@@ -8,7 +8,7 @@ import Tumble from "./Tumble";
 import { haptic } from "@/lib/native";
 import { toast, useVault, vault } from "@/lib/store";
 import { setUI, useUI } from "@/lib/ui";
-import { LANGUAGES } from "@/lib/languages";
+import { LANGUAGES, cardExamples } from "@/lib/languages";
 import { titleOf } from "@/lib/vault";
 import { useSlider } from "@/lib/useSlider";
 import { ASSISTANTS, TASKS, assistantOf, buildPrompt, cleanResult, openUrl, type FormatTask } from "@/lib/format";
@@ -36,9 +36,12 @@ function FormatFlow({ noteId }: { noteId: string }) {
   const empty = !note.content.trim();
 
   const send = () => {
+    const ex = cardExamples(settings.learning, settings.native).both;
     const prompt = buildPrompt({ title: titleOf(note.path), content: note.content }, tasks, {
       learning: nameOf(settings.learning),
       native: nameOf(settings.native),
+      word: ex.front,
+      meaning: ex.back,
     });
     const { url, filled } = openUrl(assistant, prompt);
     // Copy first, while the tap still counts, then open the assistant. The clipboard is missing on insecure pages.

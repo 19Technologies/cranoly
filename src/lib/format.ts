@@ -4,9 +4,17 @@
 import { CALLOUTS } from "./callouts";
 import type { Assistant } from "./vault";
 
-export type FormatTask = "tidy" | "arrange" | "summary" | "cards";
+export type FormatTask = "tidy" | "arrange" | "summary" | "translate" | "cards";
 
-export const TASKS: Array<{ id: FormatTask; label: string; ask: (native: string) => string }> = [
+/** The learner's languages, plus one of their words and its meaning to show the assistant what we mean. */
+export interface PromptLang {
+  learning: string;
+  native: string;
+  word: string;
+  meaning: string;
+}
+
+export const TASKS: Array<{ id: FormatTask; label: string; ask: (lang: PromptLang) => string }> = [
   {
     id: "tidy",
     label: "Tidy up",
@@ -21,12 +29,18 @@ export const TASKS: Array<{ id: FormatTask; label: string; ask: (native: string)
   {
     id: "summary",
     label: "Add a short summary",
-    ask: (native) => `Add a summary of two or three sentences at the top, written in ${native}.`,
+    ask: ({ native }) => `Add a summary of two or three sentences at the top, written in ${native}.`,
+  },
+  {
+    id: "translate",
+    label: "Link and translate words",
+    ask: ({ native, word, meaning }) =>
+      `Link and translate the words worth learning. The first time each one appears, make it a [[link]] to its dictionary form, with its meaning in ${native} in brackets right after it, like "[[${word}]] (${meaning})". When the text uses another form of the word, link the dictionary form and keep the text's form showing, like "[[dictionary form|form in the text]]". Then, at the end under a heading "Words", list each linked word once as "- [[word]] :: meaning". Those lines become flashcards.`,
   },
   {
     id: "cards",
     label: "Make flashcards",
-    ask: (native) =>
+    ask: ({ native }) =>
       `At the end, under a heading "Cards", add one line for each word or phrase worth learning, written as "word :: meaning" with the meaning in ${native}.`,
   },
 ];
@@ -52,9 +66,11 @@ export function openUrl(assistant: (typeof ASSISTANTS)[number], prompt: string) 
 export function buildPrompt(
   note: { title: string; content: string },
   tasks: FormatTask[],
-  lang: { learning: string; native: string },
+  lang: PromptLang,
 ) {
-  const asks = TASKS.filter((t) => tasks.includes(t.id)).map((t) => `- ${t.ask(lang.native)}`);
+  // The Words list already makes a card of every linked word, so a second Cards list would repeat them.
+  const chosen = tasks.includes("translate") ? tasks.filter((t) => t !== "cards") : tasks;
+  const asks = TASKS.filter((t) => chosen.includes(t.id)).map((t) => `- ${t.ask(lang)}`);
   return [
     `Please format this note from my language notebook. I'm learning ${lang.learning}, and my own language is ${lang.native}.`,
     "",
