@@ -348,7 +348,7 @@ function Flow() {
   const [card, setCard] = useState<{ front: string; back: string } | null>(null);
   const finish = () => {
     vault.updateSettings({ onboarded: true });
-    router.push("/home");
+    router.push(window.matchMedia("(max-width: 820px)").matches ? "/notes" : "/");
   };
   return (
     <div className="wc-layer" data-no-swipe role="dialog" aria-modal="true" aria-label="Welcome to Cranoly">

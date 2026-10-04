@@ -4,13 +4,14 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  FilePlus2, Folder, FolderPen, FolderPlus, GitFork, House, Layers, Moon, Notebook, PanelLeft, Plus, ScanText, Search, Settings, Sun,
+  BookA, FilePlus2, Folder, FolderPen, FolderPlus, Layers, Moon, Notebook, Orbit, PanelLeft, Plus, ScanText, Search, Settings, Sun,
   Trash2,
 } from "lucide-react";
 import Logo from "./Logo";
 import Sheet, { type Anchor } from "./Sheet";
 import { LearnButton } from "./Onboarding";
 import { allFolders, inFolder, toast, useCards, useVault, vault } from "@/lib/store";
+import { entriesOf } from "@/lib/dictionary";
 import { titleOf } from "@/lib/vault";
 import { setUI, useUI } from "@/lib/ui";
 import { useSlider } from "@/lib/useSlider";
@@ -56,12 +57,14 @@ export function ThemeToggle({ className = "icon-btn" }: { className?: string }) 
   );
 }
 
-/** Folders and places, as in the Apple Notes sidebar. */
+/** Folders first, then the places: as in the Apple Notes sidebar. On phones it's the ☰ drawer. */
 export default function Sidebar() {
   const state = useVault();
-  const { notes, workspace } = state;
+  const { notes, workspace, settings } = state;
   const { renameFolder } = useUI();
-  const cards = useCards().length;
+  const allCards = useCards();
+  const cards = allCards.length;
+  const words = useMemo(() => entriesOf(allCards, notes, settings).length, [allCards, notes, settings]);
   const router = useRouter();
   const pathname = usePathname();
   const [drop, setDrop] = useState<string | null>(null);
@@ -74,9 +77,12 @@ export default function Sidebar() {
 
   const closeDrawer = () => setUI({ mobileLeft: false });
   const show = (path: string) => {
-    vault.showFolder(path, { select: true });
+    // Phones show a folder as the notes list; bigger screens open its first note beside the list.
+    const phone = window.matchMedia("(max-width: 820px)").matches;
+    vault.showFolder(path, { select: !phone });
     closeDrawer();
-    if (pathname !== "/") router.push("/");
+    if (phone) router.push("/notes");
+    else if (pathname !== "/") router.push("/");
   };
   const newFolder = (parent = "") => setUI({ renameFolder: vault.createFolder(parent) });
   // Each group's highlight slides to the chosen place or folder.
@@ -84,14 +90,14 @@ export default function Sidebar() {
   const foldersBox = useSlider<HTMLDivElement>(".sb-item.is-active", `${pathname}|${workspace.folder}|${folders.join("\n")}`);
 
   const places = [
-    { href: "/home", label: "Home", icon: <House size={17} />, active: pathname === "/home" },
+    { href: "/mind-map", label: "Mind Map", icon: <Orbit size={17} />, active: pathname === "/mind-map" },
     { href: "/flashcards", label: "Practice", icon: <Layers size={17} />, active: pathname.startsWith("/flashcards"), count: cards },
-    { href: "/graph", label: "Map", icon: <GitFork size={17} />, active: pathname === "/graph" },
+    { href: "/dictionary", label: "Dictionary", icon: <BookA size={17} />, active: pathname === "/dictionary", count: words },
     { href: "/search", label: "Search", icon: <Search size={17} />, active: pathname === "/search" },
   ];
 
   const folderRow = (path: string, depth: number) => {
-    const on = pathname === "/" && workspace.folder === path;
+    const on = (pathname === "/" || pathname === "/notes") && workspace.folder === path;
     if (path && renameFolder === path) {
       return (
         <div key={path} className="sb-item is-editing" style={{ paddingLeft: 10 + depth * 14 }}>
@@ -105,7 +111,7 @@ export default function Sidebar() {
         key={path || "(all)"}
         className={`sb-item${on ? " is-active" : ""}${drop === path ? " is-drop" : ""}`}
         style={{ paddingLeft: 10 + depth * 14 }}
-        title={path || "All notes"}
+        title={path || "All Notes"}
         onClick={() => show(path)}
         onContextMenu={(e) => {
           if (!path) return;
@@ -127,7 +133,7 @@ export default function Sidebar() {
         }}
       >
         {path ? <Folder size={17} /> : <Notebook size={17} />}
-        <span>{path ? titleOf(path) : "All notes"}</span>
+        <span>{path ? titleOf(path) : "All Notes"}</span>
         <small>{counts.get(path) ?? 0}</small>
       </button>
     );
@@ -136,7 +142,7 @@ export default function Sidebar() {
   return (
     <aside className="sidebar-left" aria-label="Folders">
       <div className="sb-head">
-        <Link href="/home" className="sb-brand" onClick={closeDrawer}>
+        <Link href="/" className="sb-brand" onClick={closeDrawer}>
           <Logo size={24} /> Cranoly
         </Link>
         <button
@@ -153,6 +159,18 @@ export default function Sidebar() {
       </div>
 
       <div className="sb-body">
+        <div className="sb-label">
+          <span>Folders</span>
+          <button className="icon-btn" aria-label="New folder" title="New folder" onClick={() => newFolder()}>
+            <FolderPlus size={15} />
+          </button>
+        </div>
+        <div ref={foldersBox} className="sb-group has-slider">
+          <span className="slider-pill" aria-hidden />
+          {folderRow("", 0)}
+          {folders.map((f) => folderRow(f, f.split("/").length - 1))}
+        </div>
+
         <nav ref={placesNav} className="sb-group has-slider" aria-label="Places">
           <span className="slider-pill" aria-hidden />
           {places.map((p) => (
@@ -171,18 +189,6 @@ export default function Sidebar() {
             <span>Scan text</span>
           </button>
         </nav>
-
-        <div className="sb-label">
-          <span>Folders</span>
-          <button className="icon-btn" aria-label="New folder" title="New folder" onClick={() => newFolder()}>
-            <FolderPlus size={15} />
-          </button>
-        </div>
-        <div ref={foldersBox} className="sb-group has-slider">
-          <span className="slider-pill" aria-hidden />
-          {folderRow("", 0)}
-          {folders.map((f) => folderRow(f, f.split("/").length - 1))}
-        </div>
       </div>
 
       <div className="sb-foot">

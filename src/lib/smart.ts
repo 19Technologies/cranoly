@@ -10,6 +10,8 @@ import { speak, speakable } from "./speech";
 import { downloadSize, downloadVoice, speakNatural, unlockAudio, voiceReady, voiceStatus } from "./voices";
 import { setUI } from "./ui";
 import { toCards, wordListSize } from "./words";
+import { bodyOf, frontmatterOf, withProperties } from "./properties";
+import { isoDay } from "./vault";
 
 const learning = () => languageOf(getVault().settings.learning);
 
@@ -97,7 +99,8 @@ export async function checkWriting(view: EditorView, scope: "auto" | "selection"
   const sel = view.state.selection.main;
   const words = view.state.sliceDoc(sel.from, sel.to).trim().split(/\s+/).filter(Boolean).length;
   const partial = !sel.empty && (scope === "selection" || words >= 3);
-  const from = partial ? sel.from : 0;
+  // The whole note means everything below its properties block.
+  const from = partial ? sel.from : (frontmatterOf(view.state.doc.toString())?.length ?? 0);
   const to = partial ? sel.to : view.state.doc.length;
   const text = view.state.sliceDoc(from, to);
   if (!text.trim()) return toast("Write something first, then check it");
@@ -131,18 +134,36 @@ export function findNewWords(view: EditorView) {
   if (!noteId) return;
   const sel = view.state.selection.main;
   const picked = view.state.sliceDoc(sel.from, sel.to);
-  const text = picked.trim().split(/\s+/).length >= 3 ? picked : view.state.doc.toString();
+  const text = picked.trim().split(/\s+/).length >= 3 ? picked : bodyOf(view.state.doc.toString());
   setUI({ newWords: { text, noteId } });
 }
 
-/** Turn word-pair lines ("Hund – dog") in the selection (or the whole note) into flashcards. */
+/** Start the note's properties (tags and today's date) with the cursor after "tags: ", or step into the ones it has. */
+export function addProperties(view: EditorView) {
+  const doc = view.state.doc.toString();
+  view.focus();
+  if (frontmatterOf(doc)) {
+    const at = view.state.doc.line(Math.min(2, view.state.doc.lines)).to;
+    view.dispatch({ selection: { anchor: at }, scrollIntoView: true });
+    return;
+  }
+  const added = withProperties(doc, isoDay(new Date()))!;
+  view.dispatch({
+    changes: { from: 0, insert: added.content.slice(0, added.content.length - doc.length) },
+    selection: { anchor: added.caret },
+    scrollIntoView: true,
+    userEvent: "input",
+  });
+}
+
+/** Turn word-pair lines ("Hund = dog") in the selection (or the whole note) into flashcards. */
 export function makeCards(view: EditorView, range?: { from: number; to: number }) {
   const sel = view.state.selection.main;
   const listSelected = !sel.empty && wordListSize(view.state.sliceDoc(sel.from, sel.to)) > 0;
   const { from, to } = range ?? (listSelected ? sel : { from: 0, to: view.state.doc.length });
   const text = view.state.sliceDoc(from, to);
   const count = wordListSize(text);
-  if (!count) return toast("No word pairs found. Write one per line, like: Hund – dog");
+  if (!count) return toast("No word pairs found. Write one per line, like: Hund = dog");
   view.dispatch({ changes: { from, to, insert: toCards(text) }, userEvent: "input.complete" });
   toast(`Made ${count} flashcards`);
 }

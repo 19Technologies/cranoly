@@ -10,6 +10,8 @@ export interface GraphNode {
   kind: NodeKind;
   degree: number;
   noteId?: string;
+  /** A note's top-level folder ("" at the top level): its dot takes that folder's colour. */
+  folder?: string;
   x?: number;
   y?: number;
 }
@@ -50,7 +52,8 @@ export function buildGraph(notes: Record<string, Note>, index: VaultIndex, opts:
   const add = (node: GraphNode) => nodes.get(node.id) ?? (nodes.set(node.id, node), node);
 
   for (const n of Object.values(notes)) {
-    add({ id: n.id, label: titleOf(n.path), kind: "note", degree: 0, noteId: n.id });
+    const slash = n.path.indexOf("/");
+    add({ id: n.id, label: titleOf(n.path), kind: "note", degree: 0, noteId: n.id, folder: slash === -1 ? "" : n.path.slice(0, slash) });
   }
   const seen = new Set<string>();
   for (const n of Object.values(notes)) {
@@ -105,7 +108,7 @@ export function buildGraph(notes: Record<string, Note>, index: VaultIndex, opts:
 
   const sig =
     JSON.stringify(opts) +
-    keep.map((n) => n.id + n.label + n.degree).join("|") +
+    keep.map((n) => n.id + n.label + n.degree + (n.folder ?? "")).join("|") +
     keptLinks.map((l) => endId(l.source) + ">" + endId(l.target)).join("|");
   const hit = cache.get(sig);
   if (hit) return hit;

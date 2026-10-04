@@ -401,6 +401,11 @@ export const vault = {
     set((s) => ({ ...s, workspace: { ...s.workspace, mode } }));
   },
 
+  /** Source mode: editing shows every symbol (on), or the live preview (off). Either way you're editing. */
+  setSource(source: boolean) {
+    set((s) => ({ ...s, workspace: { ...s.workspace, source, mode: s.workspace.mode === "read" ? "edit" : s.workspace.mode } }));
+  },
+
   setPanel(panel: "leftOpen" | "rightOpen", open?: boolean) {
     set((s) => ({ ...s, workspace: { ...s.workspace, [panel]: open ?? !s.workspace[panel] } }));
   },

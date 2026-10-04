@@ -1,10 +1,11 @@
-// Flashcards live inside notes (Obsidian Spaced Repetition syntax):
+// Flashcards live inside notes (the common spaced-repetition Markdown syntax):
 //   front :: back         one card
 //   front ::: back        two cards, one each way
 //   front / ? / back      multi-line card (?? makes it two-way)
 //   ==cloze==             one card per highlight
 import { Note, folderOf, titleOf } from "./vault";
 import { stripCode } from "./links";
+import { blankFrontmatter } from "./properties";
 
 export type CardKind = "basic" | "reversed" | "multiline" | "cloze";
 
@@ -49,7 +50,8 @@ export function deckFor(note: Note, tags: string[]) {
 export function extractCards(note: Note, tags: string[]): Card[] {
   const deck = deckFor(note, tags);
   const lines = note.content.split("\n");
-  const probe = stripCode(note.content).split("\n");
+  // The properties block at the top never holds cards ("title: Hold On" is not a word and its meaning).
+  const probe = stripCode(blankFrontmatter(note.content)).split("\n");
   const cards: Card[] = [];
   const used = new Set<number>();
 

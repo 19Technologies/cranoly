@@ -29,7 +29,7 @@ function Session({ cards: initial, title, shuffle, startWithBack, limit }: {
   title: string;
   shuffle: boolean;
   startWithBack: boolean;
-  /** Study only this many (a quick session from Home). Shuffled decks pick them at random. */
+  /** Study only this many (a quick session). Shuffled decks pick them at random. */
   limit: number;
 }) {
   const router = useRouter();
@@ -95,7 +95,7 @@ function Session({ cards: initial, title, shuffle, startWithBack, limit }: {
     [cards],
   );
 
-  /** Back to wherever practice was started from (Home, Practice or a note). */
+  /** Back to wherever practice was started from (Practice, the Dictionary or a note). */
   const leave = useCallback(() => {
     if (window.history.length > 1) router.back();
     else router.push("/flashcards");

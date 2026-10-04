@@ -9,7 +9,7 @@ import { isApp } from "@/lib/native";
 
 /**
  * Android app behaviour: the back button closes what's open, then goes back, and leaves the app
- * from Home; the status bar icons follow the theme.
+ * from the notes list; the status bar icons follow the theme.
  */
 export default function NativeBridge() {
   const router = useRouter();
@@ -30,11 +30,11 @@ export default function NativeBridge() {
         if (ui.palette) return setUI({ palette: null });
         if (ui.sheet) return setUI({ sheet: null });
         if (ui.mobileLeft || ui.mobileRight) return setUI({ mobileLeft: false, mobileRight: false });
-        // Home is where the app starts, so back from Home leaves it. Other tabs go back to Home.
-        if (pathname === "/home") return App.minimizeApp();
+        // The notes list is where the app starts, so back from there leaves it. Other pages go back to it.
+        if (pathname === "/notes") return App.minimizeApp();
         if (pathname.startsWith("/flashcards/study")) return router.back();
         if (pathname === "/") return getVault().workspace.historyIndex > 0 ? vault.go(-1) : router.push("/notes");
-        router.push("/home");
+        router.push("/notes");
       });
       if (live) remove = () => handle.remove();
       else handle.remove();

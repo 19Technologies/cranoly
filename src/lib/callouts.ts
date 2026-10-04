@@ -1,4 +1,4 @@
-// Callouts: "> [!tip]" turns a quote into a coloured box with an icon (Obsidian's types and names).
+// Callouts: "> [!tip]" turns a quote into a coloured box with an icon (the usual Markdown callout types and names).
 // Colours and icons live in globals.css under [data-callout]. The formatting guide and the Format
 // prompt list these, so a type added here shows up in both.
 
@@ -12,7 +12,7 @@ export const CALLOUTS: Array<{ type: string; also: string[]; main?: boolean }> =
   { type: "question", also: ["help", "faq"], main: true },
   { type: "example", also: [], main: true },
   { type: "quote", also: ["cite"], main: true },
-  // The rest of Obsidian's.
+  // The rest of the usual set.
   { type: "abstract", also: ["summary", "tldr"] },
   { type: "info", also: [] },
   { type: "todo", also: [] },

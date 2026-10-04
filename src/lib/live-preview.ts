@@ -1,9 +1,9 @@
-// Obsidian-style Live Preview for the editor: markdown syntax (the [[ ]] around links, ** around
+// Live Preview for the editor: markdown syntax (the [[ ]] around links, ** around
 // bold, # before headings…) is hidden until the cursor touches it, so notes read cleanly while
 // still being plain text underneath.
 
-import { StateEffect, type Extension, type Range } from "@codemirror/state";
-import { Decoration, ViewPlugin, WidgetType, type DecorationSet, type EditorView, type ViewUpdate } from "@codemirror/view";
+import { StateEffect, StateField, type EditorState, type Extension, type Range } from "@codemirror/state";
+import { Decoration, EditorView, ViewPlugin, WidgetType, type DecorationSet, type ViewUpdate } from "@codemirror/view";
 import {
   HighlightStyle,
   Language,
@@ -16,6 +16,7 @@ import {
 import { tags as t } from "@lezer/highlight";
 import { GFM, parser } from "@lezer/markdown";
 import { CALLOUT_RE, calloutTitle } from "./callouts";
+import { frontmatterOf, parseProperties, showDate, type PropertyValue } from "./properties";
 import { TAG_RE, WIKI_RE, parseWikiInner, tintFor } from "./links";
 
 // Markdown + GitHub extras (tables, task lists, strikethrough), without the HTML/JS/CSS parsers
@@ -37,6 +38,14 @@ const highlight = HighlightStyle.define([
 
 /** Dispatch this when link targets may have changed (a note was created, renamed or deleted). */
 export const refreshPreview = StateEffect.define<null>();
+
+/** Source mode on or off. On, every symbol shows as typed and nothing is drawn over the text. */
+export const setSourceMode = StateEffect.define<boolean>();
+const sourceMode = StateField.define<boolean>({
+  create: () => false,
+  update: (on, tr) => tr.effects.reduce((v, e) => (e.is(setSourceMode) ? e.value : v), on),
+});
+
 
 const HIDE = Decoration.replace({});
 const BRACKET = Decoration.mark({ class: "cm-formatting" });
@@ -122,6 +131,126 @@ class CalloutWidget extends WidgetType {
 const calloutLine = (kind: string, part: string) =>
   Decoration.line({ class: `cm-callout-line${part}`, attributes: { "data-callout": kind } });
 
+/** One property's value, as the notes draw it: tags as tag chips, lists as chips, dates in words. */
+function valueDOM(key: string, value: PropertyValue): HTMLElement {
+  const dd = document.createElement("dd");
+  const items = Array.isArray(value) ? value : null;
+  if (value === null || value === "" || (items && !items.length)) {
+    dd.className = "is-empty";
+    return dd;
+  }
+  if (/^tags?$/i.test(key)) {
+    const tags = items ?? String(value).split(/[,\s]+/);
+    for (const t of tags) {
+      const tag = String(t ?? "").replace(/^#/, "").trim();
+      if (!tag) continue;
+      const chip = document.createElement("span");
+      chip.className = "tag";
+      chip.dataset.tint = tintFor(tag);
+      chip.textContent = `#${tag}`;
+      dd.append(chip);
+    }
+    return dd;
+  }
+  if (items) {
+    for (const item of items) {
+      const chip = document.createElement("span");
+      chip.className = "prop-chip";
+      chip.textContent = String(item ?? "");
+      dd.append(chip);
+    }
+    return dd;
+  }
+  dd.textContent = typeof value === "boolean" ? (value ? "Yes" : "No") : typeof value === "string" ? showDate(value) : String(value);
+  return dd;
+}
+
+/** The properties block, drawn as a small table. Tapping it shows the lines as typed, to edit them. */
+class PropertiesWidget extends WidgetType {
+  constructor(readonly yaml: string) {
+    super();
+  }
+  eq(other: PropertiesWidget) {
+    return other.yaml === this.yaml;
+  }
+  toDOM(view: EditorView) {
+    const box = document.createElement("div");
+    box.className = "properties cm-properties";
+    box.title = "Tap to edit the properties";
+    const title = document.createElement("div");
+    title.className = "properties-title";
+    title.textContent = "Properties";
+    box.append(title);
+    const props = parseProperties(this.yaml);
+    if (props) {
+      const list = document.createElement("dl");
+      list.className = "properties-list";
+      for (const { key, value } of props) {
+        const row = document.createElement("div");
+        row.className = "properties-row";
+        const dt = document.createElement("dt");
+        dt.textContent = key;
+        row.append(dt, valueDOM(key, value));
+        list.append(row);
+      }
+      box.append(list);
+    } else {
+      const raw = document.createElement("pre");
+      raw.className = "properties-raw";
+      raw.textContent = this.yaml;
+      const note = document.createElement("p");
+      note.className = "properties-error";
+      note.textContent = "Couldn’t read these properties. Tap to fix them.";
+      box.append(raw, note);
+    }
+    box.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      view.focus();
+      const first = view.state.doc.line(Math.min(2, view.state.doc.lines));
+      view.dispatch({ selection: { anchor: first.to } });
+    });
+    return box;
+  }
+  ignoreEvent() {
+    return true;
+  }
+}
+
+const FM_LINE = Decoration.line({ class: "cm-fm-line" });
+const FM_KEY = Decoration.mark({ class: "cm-fm-key" });
+
+/**
+ * The properties block at the top of a note: drawn as a table until the cursor goes in, then shown as typed.
+ * Block widgets have to come from a state field, not a view plugin. A note opens with its cursor just below
+ * the block (see Editor.tsx), so it starts out as the table.
+ */
+function propertiesDecorations(state: EditorState): DecorationSet {
+  const fm = frontmatterOf(state.doc.toString());
+  if (!fm) return Decoration.none;
+  const to = state.doc.line(fm.lines).to;
+  const inside = state.selection.ranges.some((r) => r.from <= to);
+  if (state.field(sourceMode, false) || inside) {
+    const out: Range<Decoration>[] = [];
+    for (let i = 1; i <= fm.lines; i++) {
+      const line = state.doc.line(i);
+      out.push(FM_LINE.range(line.from));
+      const key = i > 1 && i < fm.lines ? /^([^\s:#-][^:]*):/.exec(line.text) : null;
+      if (key) out.push(FM_KEY.range(line.from, line.from + key[1].length));
+    }
+    return Decoration.set(out, true);
+  }
+  return Decoration.set([Decoration.replace({ widget: new PropertiesWidget(fm.yaml), block: true }).range(0, to)]);
+}
+
+const properties = StateField.define<DecorationSet>({
+  create: (state) => propertiesDecorations(state),
+  update: (deco, tr) =>
+    tr.docChanged || tr.selection || tr.effects.some((e) => e.is(setSourceMode))
+      ? propertiesDecorations(tr.state)
+      : deco,
+  provide: (field) => EditorView.decorations.from(field),
+});
+
 const ONE_WAY = Decoration.replace({ widget: new ArrowWidget("→") });
 const TWO_WAY = Decoration.replace({ widget: new ArrowWidget("⇄") });
 const CARD_BACK = Decoration.mark({ class: "cm-card-back" });
@@ -130,8 +259,9 @@ function build(view: EditorView, exists: (target: string) => boolean): Decoratio
   const { state } = view;
   const { doc } = state;
   const ranges = view.hasFocus ? state.selection.ranges : [];
-  // Syntax shows while the cursor (or selection) touches the element, like Obsidian.
-  const touches = (from: number, to: number) => ranges.some((r) => r.from <= to && r.to >= from);
+  // Syntax shows while the cursor (or selection) touches the element. In source mode it always shows.
+  const source = state.field(sourceMode, false) ?? false;
+  const touches = source ? () => true : (from: number, to: number) => ranges.some((r) => r.from <= to && r.to >= from);
   const onLine = (pos: number) => {
     const line = doc.lineAt(pos);
     return touches(line.from, line.to);
@@ -150,11 +280,16 @@ function build(view: EditorView, exists: (target: string) => boolean): Decoratio
   const from = doc.lineAt(vis[0].from).from;
   const to = doc.lineAt(vis[vis.length - 1].to).to;
 
+  // The properties block has its own drawing (the state field above); Markdown would read it as a heading.
+  const fm = frontmatterOf(doc.toString());
+  const fmTo = fm ? doc.line(fm.lines).to : -1;
+
   syntaxTree(state).iterate({
     from,
     to,
     enter(node) {
       const { name } = node;
+      if (node.to <= fmTo) return false;
       if (name === "FencedCode" || name === "CodeBlock") {
         code.push([node.from, node.to]);
         for (let pos = node.from; pos <= node.to; ) {
@@ -250,7 +385,7 @@ function build(view: EditorView, exists: (target: string) => boolean): Decoratio
     const line = doc.lineAt(pos);
     const text = line.text;
     pos = line.to + 1;
-    if (!text) continue;
+    if (!text || line.to <= fmTo) continue;
 
     for (const m of text.matchAll(WIKI_RE)) {
       const s = line.from + m.index!;
@@ -318,8 +453,8 @@ function build(view: EditorView, exists: (target: string) => boolean): Decoratio
   return Decoration.set(out, true);
 }
 
-/** Markdown highlighting plus the hide-syntax-until-touched decorations. */
-export function livePreview(exists: (target: string) => boolean): Extension {
+/** Markdown highlighting plus the hide-syntax-until-touched decorations (none of them in source mode). */
+export function livePreview(exists: (target: string) => boolean, source = false): Extension {
   const plugin = ViewPlugin.fromClass(
     class {
       decorations: DecorationSet;
@@ -333,12 +468,12 @@ export function livePreview(exists: (target: string) => boolean): Extension {
           u.viewportChanged ||
           u.focusChanged ||
           syntaxTree(u.startState) !== syntaxTree(u.state) ||
-          u.transactions.some((tr) => tr.effects.some((e) => e.is(refreshPreview)))
+          u.transactions.some((tr) => tr.effects.some((e) => e.is(refreshPreview) || e.is(setSourceMode)))
         )
           this.decorations = build(u.view, exists);
       }
     },
     { decorations: (v) => v.decorations },
   );
-  return [markdown, syntaxHighlighting(highlight), plugin];
+  return [markdown, syntaxHighlighting(highlight), sourceMode.init(() => source), properties, plugin];
 }

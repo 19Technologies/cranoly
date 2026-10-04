@@ -1,5 +1,6 @@
 // Wikilinks, tags, headings and the vault-wide link index.
 import { Note, titleOf } from "./vault";
+import { blankFrontmatter, propertyTags } from "./properties";
 
 export interface WikiRef {
   target: string;
@@ -66,8 +67,9 @@ export function extractLinks(content: string): WikiRef[] {
 }
 
 export function extractTags(content: string): string[] {
-  const tags = new Set<string>();
-  const text = stripCode(content).replace(WIKI_RE, " ");
+  // Tags listed in the properties block count too ("tags: [German, Class]").
+  const tags = new Set<string>(propertyTags(content));
+  const text = stripCode(blankFrontmatter(content)).replace(WIKI_RE, " ");
   for (const m of text.matchAll(TAG_RE)) {
     // Skip markdown headings ("# Title") and pure numbers ("#1")
     if (/^\d+$/.test(m[2])) continue;
@@ -116,7 +118,7 @@ export function buildIndex(notes: Record<string, Note>): VaultIndex {
   for (const n of list) {
     byPath.set(n.path.toLowerCase(), n);
     const t = titleOf(n.path).toLowerCase();
-    if (!byTitle.has(t)) byTitle.set(t, n); // shortest path wins, like Obsidian
+    if (!byTitle.has(t)) byTitle.set(t, n); // shortest path wins
   }
   const resolve = (target: string) => {
     const key = target.trim().replace(/\.md$/i, "").toLowerCase();

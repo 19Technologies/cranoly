@@ -151,6 +151,18 @@ export default function FormattingPage() {
       ],
     },
     {
+      title: "Properties",
+      intro:
+        "A note can start with properties: facts about it, like its teacher, its type and its tags. They go between two --- lines at the very top, and tags listed there count like #tags. To start them, pick Add properties in the ••• menu.",
+      rows: [
+        {
+          type: ["---", "title: My first class", "teacher: Mr Charles", "type: Class", "tags:", `- ${lang.name}`, "- Class", "created: 2026-10-4", "---"].join("\n"),
+          note: "Each line is a name, a colon and a value. A list goes on the lines below, each starting with -.",
+          how: "Tap the box in a note to change it.",
+        },
+      ],
+    },
+    {
       title: "Flashcards",
       intro: "Any line can be a card. Answer first in practice flips any card the other way.",
       rows: [
@@ -184,6 +196,11 @@ export default function FormattingPage() {
         <p className="page-lede">
           Notes use Markdown, a few symbols that turn into headings, lists and more. Type them yourself, or use the buttons
           above the keyboard on your phone.
+        </p>
+        <p className="fmt-modes">
+          The button at the top of a note says <b>Edit</b> while you read and <b>Read</b> while you edit. Editing shows the
+          formatting as you type. <b>Source mode</b>, in the ••• menu, shows every symbol just as you typed it, like the left
+          column below.
         </p>
       </header>
 

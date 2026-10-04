@@ -3,12 +3,13 @@
 import { useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  CalendarDays, Check, Dices, Folder, FolderInput, FolderPen, FolderPlus, GitFork, Layers, MoreHorizontal, PanelLeft, Pencil,
+  CalendarDays, Check, Dices, Folder, FolderInput, FolderPen, FolderPlus, Layers, Menu, MoreHorizontal, Orbit, PanelLeft, Pencil,
   Pin, PinOff, ScanText, Search, SquarePen, SquareTerminal, Trash2, X,
 } from "lucide-react";
 import Sheet, { type Anchor } from "./Sheet";
 import { allFolders, cardsOf, inFolder, toast, useVault, vault } from "@/lib/store";
 import { friendlyCard, plainLine } from "@/lib/links";
+import { bodyOf } from "@/lib/properties";
 import { folderOf, titleOf, type Note } from "@/lib/vault";
 import { parseDay, useToday } from "@/lib/useToday";
 import { setUI } from "@/lib/ui";
@@ -38,8 +39,9 @@ function when(t: number, today: Date) {
   return d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: d.getFullYear() === today.getFullYear() ? undefined : "numeric" });
 }
 
+// The first line of the note's text: below its properties block, skipping headings and tag lines.
 const preview = (content: string) =>
-  content
+  bodyOf(content)
     .split("\n")
     .map((l) => friendlyCard(plainLine(l)))
     .find((l) => l && !/^#{1,6}\s|^#\p{L}/u.test(l))
@@ -345,7 +347,7 @@ export default function NoteList({ variant }: { variant: "column" | "page" }) {
   // The yellow highlight glides to the open note, and follows it when edits move it up the list.
   const order = sections.map((s) => s.notes.map((n) => n.id).join(",")).join("|");
   const scroll = useSlider<HTMLDivElement>(".nl-row.is-active", `${active}|${order}`);
-  const name = folder ? titleOf(folder) : variant === "page" ? "Notes" : "All notes";
+  const name = folder ? titleOf(folder) : variant === "page" ? "Notes" : "All Notes";
   const total = shown.length;
 
   return (
@@ -362,6 +364,11 @@ export default function NoteList({ variant }: { variant: "column" | "page" }) {
             }}
           >
             <PanelLeft size={18} />
+          </button>
+        )}
+        {variant === "page" && (
+          <button className="icon-btn nl-menu" aria-label="Menu" title="Folders, Mind Map, Practice and more" onClick={() => setUI({ mobileLeft: true })}>
+            <Menu size={21} />
           </button>
         )}
         <div className="nl-name">
@@ -456,8 +463,8 @@ export default function NoteList({ variant }: { variant: "column" | "page" }) {
           <button className="sheet-item" onClick={run(() => { vault.openDaily(); router.push("/"); })}>
             <CalendarDays size={18} /> <span>Today’s page</span>
           </button>
-          <button className="sheet-item" onClick={run(() => router.push("/graph"))}>
-            <GitFork size={18} /> <span>Map of your notes</span>
+          <button className="sheet-item" onClick={run(() => router.push("/mind-map"))}>
+            <Orbit size={18} /> <span>Mind Map</span>
           </button>
           <button className="sheet-item" onClick={run(() => { vault.openRandom(); router.push("/"); })}>
             <Dices size={18} /> <span>Random note</span>

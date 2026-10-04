@@ -2,6 +2,7 @@
 // Cranoly runs no AI itself. The note leaves the device only when the learner taps the button,
 // and only to the assistant they picked.
 import { CALLOUTS } from "./callouts";
+import { frontmatterOf } from "./properties";
 import type { Assistant } from "./vault";
 
 export type FormatTask = "tidy" | "arrange" | "summary" | "translate" | "cards";
@@ -82,6 +83,8 @@ export function buildPrompt(
     '- Keep these exactly as they are: flashcard lines with "::" or ":::", lines that are only "?" or "??", ==highlights==, [[links]], #tags and callouts.',
     "- Use only this Markdown: # headings, **bold**, *italic*, ~~strikethrough~~, - lists, 1. numbered lists, - [ ] checklists, > quotes, > [!type] callouts, --- lines and `code`.",
     `- A callout is a quote whose first line is "> [!type]" or "> [!type] Title", with every line after it starting with ">". The types are ${CALLOUTS.map((c) => c.type).join(", ")}. Put - after the type ("> [!question]-") to fold it shut, or + to fold it open.`,
+    ...(frontmatterOf(note.content) ? ["- Keep the properties block between the --- lines at the top exactly as it is."] : []),
+    "- Don't use em dashes or en dashes. Use a colon, a comma or a new sentence instead.",
     "- Reply with only the formatted note, in Markdown. No introduction, no explanation, no code block around it.",
     "",
     `The note is called "${note.title}":`,

@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import {
   BookOpen,
   CalendarDays,
+  CodeXml,
+  TableProperties,
   Columns2,
   Download,
   Eye,
@@ -12,7 +14,7 @@ import {
   FileText,
   FolderPlus,
   Layers,
-  Network,
+  Orbit,
   GraduationCap,
   PanelLeft,
   PanelRight,
@@ -23,7 +25,6 @@ import {
   Trash2,
   TextCursorInput,
   BookA,
-  House,
   ListPlus,
   MessageCircleQuestion,
   Plus,
@@ -34,7 +35,7 @@ import {
   Type,
   WandSparkles,
 } from "lucide-react";
-import { checkWriting, explain, findNewWords, hear, makeCards, withEditor } from "@/lib/smart";
+import { addProperties, checkWriting, explain, findNewWords, hear, makeCards, withEditor } from "@/lib/smart";
 import { folderOf, titleOf } from "@/lib/vault";
 import { rank } from "@/lib/fuzzy";
 import { cardsOf, useVault, vault } from "@/lib/store";
@@ -80,14 +81,14 @@ function Palette({ mode }: { mode: "commands" | "notes" }) {
       { id: "add-word", label: "Add a word (meaning filled in for you)", icon: <Plus size={15} />, run: () => setUI({ addWord: { noteId: activeNote?.id ?? null, mode: "word" } }) },
       { id: "paste-list", label: "Paste a word list", icon: <ListPlus size={15} />, run: () => setUI({ addWord: { noteId: activeNote?.id ?? null, mode: "list" } }) },
       { id: "scan", label: "Scan text from a photo", icon: <ScanText size={15} />, run: () => setUI({ scan: { noteId: activeNote?.id ?? null } }) },
-      { id: "home", label: "Go home", icon: <House size={15} />, run: go("/home") },
       { id: "new", label: "Create new note", icon: <FilePlus2 size={15} />, run: () => { const id = vault.createNote({ folder: activeNote ? folderOf(activeNote.path) : "" }); setUI({ pendingRename: id }); router.push("/"); } },
       { id: "folder", label: "Create new folder", icon: <FolderPlus size={15} />, run: () => { setUI({ renameFolder: vault.createFolder(), mobileLeft: true }); vault.setPanel("leftOpen", true); } },
       { id: "daily", label: "Open today's daily note", icon: <CalendarDays size={15} />, run: () => { vault.openDaily(); router.push("/"); } },
       { id: "switch", label: "Quick switcher: open a note", icon: <FileText size={15} />, hint: "⌘O", run: () => setTimeout(() => setUI({ palette: "notes" })) },
       { id: "search", label: "Search all notes", icon: <Search size={15} />, hint: "⌘⇧F", run: () => { openSearch(); router.push("/search"); } },
       { id: "ask", label: "Ask your notes a question", icon: <MessageCircleQuestion size={15} />, run: () => { openSearch(); router.push("/search"); } },
-      { id: "graph", label: "Open graph view", icon: <Network size={15} />, run: go("/graph") },
+      { id: "mind-map", label: "Open the Mind Map", icon: <Orbit size={15} />, run: go("/mind-map") },
+      { id: "dictionary", label: "Open your dictionary", icon: <BookA size={15} />, run: go("/dictionary") },
       { id: "cards", label: "Open flashcard decks", icon: <Layers size={15} />, run: go("/flashcards") },
       { id: "study", label: "Study all flashcards", icon: <BookOpen size={15} />, run: go("/flashcards/study") },
       { id: "random", label: "Open a random note", icon: <Shuffle size={15} />, run: () => { vault.openRandom(); router.push("/"); } },
@@ -102,7 +103,9 @@ function Palette({ mode }: { mode: "commands" | "notes" }) {
       const count = cardsOf(notes).filter((c) => c.noteId === activeNote.id).length;
       list.splice(3, 0,
         { id: "read", label: "Reading view", icon: <Eye size={15} />, hint: "⌘E", run: () => { vault.setMode("read"); router.push("/"); } },
-        { id: "edit", label: "Editing view", icon: <PenLine size={15} />, hint: "⌘E", run: () => { vault.setMode("edit"); router.push("/"); } },
+        { id: "edit", label: "Live preview: edit with the formatting showing", icon: <PenLine size={15} />, hint: "⌘E", run: () => { vault.setSource(false); vault.setMode("edit"); router.push("/"); } },
+        { id: "source", label: "Source mode: edit with every symbol showing", icon: <CodeXml size={15} />, run: () => { vault.setSource(true); router.push("/"); } },
+        { id: "properties", label: "Add properties (tags, date and more)", icon: <TableProperties size={15} />, run: () => { router.push("/"); withEditor(addProperties); } },
         { id: "split", label: "Split view: edit and preview", icon: <Columns2 size={15} />, run: () => { vault.setMode("split"); router.push("/"); } },
         { id: "rename", label: `Rename “${titleOf(activeNote.path)}”`, icon: <TextCursorInput size={15} />, run: () => { setUI({ pendingRename: activeNote.id }); router.push("/"); } },
         { id: "format", label: "Format this note with AI", icon: <WandSparkles size={15} />, run: () => setUI({ format: { noteId: activeNote.id } }) },

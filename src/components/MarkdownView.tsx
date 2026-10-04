@@ -3,6 +3,7 @@
 import { createContext, useContext, useMemo, useRef, useState, type ReactNode } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkFrontmatter from "remark-frontmatter";
 import type { Element, ElementContent } from "hast";
 import { usePathname, useRouter } from "next/navigation";
 import { remarkWiki } from "@/lib/remark-wiki";
@@ -222,7 +223,8 @@ export default function MarkdownView({
   onToggleTask?: (line: number) => void;
   className?: string;
 }) {
-  const plugins = useMemo(() => [remarkGfm, [remarkWiki, { cards }]] as const, [cards]);
+  // remark-frontmatter keeps the --- properties block out of the Markdown (it would read as a heading).
+  const plugins = useMemo(() => [remarkGfm, remarkFrontmatter, [remarkWiki, { cards }]] as const, [cards]);
   const ctx = useMemo(
     () => ({ sourceId, interactive, depth, onToggleTask }),
     [sourceId, interactive, depth, onToggleTask],

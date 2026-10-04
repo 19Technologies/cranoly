@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 import { ArrowRight, Flame, Layers, Play, Shuffle, CalendarCheck, CalendarClock, FileText, Hourglass } from "lucide-react";
 import { buildDecks } from "@/lib/cards";
 import { cardExamples } from "@/lib/languages";
-import { fromRecentNotes, heatmap, notSeenLately, streak } from "@/lib/study";
+import { forLanguage, fromRecentNotes, heatmap, notSeenLately, streak } from "@/lib/study";
+import LanguageSwitch from "@/components/LanguageSwitch";
 import { useCards, useVault } from "@/lib/store";
 import { parseDay, useToday } from "@/lib/useToday";
 
@@ -51,7 +52,11 @@ function Heatmap({ activity, today }: { activity: Record<string, number>; today:
 export default function FlashcardsPage() {
   const { activity, seen, notes, settings } = useVault();
   const ex = cardExamples(settings.learning, settings.native);
-  const cards = useCards();
+  const every = useCards();
+  // Learning more than one language: Practice shows the one picked in the switch.
+  const several = settings.languages.length > 1;
+  const cards = useMemo(() => forLanguage(every, notes, settings), [every, notes, settings]);
+  const lang = several ? `&lang=${settings.learning}` : "";
   const today = useToday();
   const router = useRouter();
   const decks = useMemo(() => buildDecks(cards), [cards]);
@@ -88,6 +93,7 @@ export default function FlashcardsPage() {
             ? `${cards.length} ${cards.length === 1 ? "card" : "cards"} from ${noteCount} ${noteCount === 1 ? "note" : "notes"}. Tap a deck to start.`
             : "Add words with ＋ and they show up here as cards."}
         </p>
+        <LanguageSwitch />
       </header>
 
       {days > 0 && (
@@ -119,7 +125,7 @@ export default function FlashcardsPage() {
         <div className="smart-decks" aria-label="Smart decks">
           {smart.map((d) =>
             d.count ? (
-              <Link key={d.id} href={`/flashcards/study?smart=${d.id}`} className={`smart-deck ${d.tint}`}>
+              <Link key={d.id} href={`/flashcards/study?smart=${d.id}${lang}`} className={`smart-deck ${d.tint}`}>
                 {d.icon}
                 <span className="smart-deck-text">
                   <b>{d.name}</b>
@@ -145,7 +151,7 @@ export default function FlashcardsPage() {
           <h2>Decks</h2>
           {cards.length > 0 && (
             <div className="btn-row">
-              <Link href="/flashcards/study?shuffle=1" className="btn">
+              <Link href={`/flashcards/study?shuffle=1${lang}`} className="btn">
                 <Shuffle size={14} /> Shuffle all
               </Link>
               <Link href="/flashcards/study" className="btn btn-primary">

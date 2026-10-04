@@ -7,14 +7,15 @@ import { EditorView, keymap, placeholder, type ViewUpdate } from "@codemirror/vi
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { indentUnit } from "@codemirror/language";
 import { Note, folderOf, titleOf } from "@/lib/vault";
-import { indexOf, toast, useVault, validateTitle, vault } from "@/lib/store";
+import { getVault, indexOf, toast, useVault, validateTitle, vault } from "@/lib/store";
 import { setUI, useUI } from "@/lib/ui";
 import { continueList, diff, indent, linkSelection, pairBrackets, setActiveEditor, activeEditor, wrap } from "@/lib/cm";
-import { livePreview, refreshPreview } from "@/lib/live-preview";
+import { livePreview, refreshPreview, setSourceMode } from "@/lib/live-preview";
 import { writingIssues } from "@/lib/issues";
 import { languageOf } from "@/lib/languages";
 import { checkWriting, explain, findNewWords, flashcard, hear, makeCards } from "@/lib/smart";
 import { wordListSize } from "@/lib/words";
+import { frontmatterOf } from "@/lib/properties";
 
 /** Floating bar over a selection (desktop): Flashcard, Link, Explain, Hear, New words, Make cards, Check. */
 interface Bar {
@@ -41,7 +42,7 @@ export default function Editor({ note, autoFocus = false }: { note: Note; autoFo
   const wrapper = useRef<HTMLDivElement>(null);
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
-  const { notes, settings } = useVault();
+  const { notes, settings, workspace } = useVault();
   const [suggest, setSuggest] = useState<Suggest | null>(null);
   const [bar, setBar] = useState<Bar | null>(null);
   const pressing = useRef(false);
@@ -151,7 +152,7 @@ export default function Editor({ note, autoFocus = false }: { note: Note; autoFo
       });
     };
 
-    /** Pasted a list like "Hund – dog"? Offer to turn it into flashcards. */
+    /** Pasted a list like "Hund = dog"? Offer to turn it into flashcards. */
     const offerCards = (v: EditorView, u: ViewUpdate) => {
       const lists: Array<{ from: number; to: number; text: string; count: number }> = [];
       for (const tr of u.transactions) {
@@ -213,6 +214,8 @@ export default function Editor({ note, autoFocus = false }: { note: Note; autoFo
       parent,
       state: EditorState.create({
         doc: live.current.content,
+        // Start just below the properties block, so it opens drawn as a table rather than as typed.
+        selection: { anchor: frontmatterOf(live.current.content)?.length ?? 0 },
         extensions: [
           suggestKeys,
           keymap.of([
@@ -236,7 +239,7 @@ export default function Editor({ note, autoFocus = false }: { note: Note; autoFo
             "aria-label": "Note text",
           }),
           placeholder(PLACEHOLDER),
-          livePreview((target) => !!live.current.index.resolve(target)),
+          livePreview((target) => !!live.current.index.resolve(target), getVault().workspace.source),
           EditorView.domEventHandlers({
             mousedown: (e) => {
               pressing.current = true;
@@ -301,6 +304,11 @@ export default function Editor({ note, autoFocus = false }: { note: Note; autoFo
     v.dispatch({ changes: diff(current, note.content), annotations: [Transaction.remote.of(true), Transaction.addToHistory.of(false)] });
   }, [note.content]);
 
+  // Source mode switches in place: the text, the caret and the undo history stay.
+  useEffect(() => {
+    view.current?.dispatch({ effects: setSourceMode.of(workspace.source) });
+  }, [workspace.source]);
+
   // Links turn from "new" to existing (and back) as notes come and go.
   useEffect(() => {
     view.current?.dispatch({ effects: refreshPreview.of(null) });
@@ -321,7 +329,7 @@ export default function Editor({ note, autoFocus = false }: { note: Note; autoFo
   }, [pendingLine]);
 
   return (
-    <div className="editor" ref={wrapper}>
+    <div className={`editor${workspace.source ? " is-source" : ""}`} ref={wrapper}>
       <div ref={host} />
       {bar && (
         <div className="sel-bar" style={{ top: bar.top, left: bar.left }} role="toolbar" aria-label="Selection" onMouseDown={(e) => e.preventDefault()}>

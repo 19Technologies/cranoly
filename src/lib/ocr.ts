@@ -1,6 +1,6 @@
 // "Scan text": reads the text in a photo with Tesseract (Apache-2.0), running on the device.
 // Nothing is bundled with the app: the scanner (about 4 MB) and a small file per language
-// (1–2 MB) come from public CDNs the first time, then the browser keeps them. The photo itself
+// (1 to 2 MB) come from public CDNs the first time, then the browser keeps them. The photo itself
 // never leaves the device.
 import type { Language } from "./languages";
 
@@ -127,7 +127,7 @@ function lineOf(l: ScanLine, width: number): Line | null {
   const b = l.baseline;
   return {
     // "Hund        dog": a gap much wider than a space is a column gap, written the way word lists are.
-    text: words.map((w, i) => (i ? (w.bbox.x0 - words[i - 1].bbox.x1 > height * 1.6 ? " – " : " ") : "") + w.text.trim()).join(""),
+    text: words.map((w, i) => (i ? (w.bbox.x0 - words[i - 1].bbox.x1 > height * 1.6 ? " = " : " ") : "") + w.text.trim()).join(""),
     words: words.length,
     bbox: l.bbox,
     slope: b && b.x1 !== b.x0 ? (b.y1 - b.y0) / (b.x1 - b.x0) : 0,
@@ -137,7 +137,7 @@ function lineOf(l: ScanLine, width: number): Line | null {
 
 /**
  * A paragraph's lines. Prose fills its column, so all its lines but the last run nearly full width: join them
- * back up, making words split by a hyphen whole. A list's lines are ragged, or pair words with "–" or "=".
+ * back up, making words split by a hyphen whole. A list's lines are ragged, or pair words with "=" or a dash.
  */
 function paragraph(lines: Line[]) {
   const texts = lines.map((l) => l.text);
@@ -155,7 +155,7 @@ function paragraph(lines: Line[]) {
 /**
  * Put what the scanner read back together, from where each line sits in the photo:
  * - text cut off by the photo's edge (the facing page of a book) is left out, as it only adds broken words;
- * - columns of short lines side by side (a word list, a table) are read across, row by row: "Hund – dog";
+ * - columns of short lines side by side (a word list, a table) are read across, row by row: "Hund = dog";
  * - prose is joined back into paragraphs, a list keeps its lines.
  */
 export function assemble(blocks: ScanBlock[], width: number) {
@@ -230,7 +230,7 @@ export function assemble(blocks: ScanBlock[], width: number) {
         if (row) row.cells.push(l);
         else rows.push({ level: level(l), cells: [l] });
       }
-      out.push(rows.map((r) => r.cells.sort((a, b) => a.bbox.x0 - b.bbox.x0).map((c) => c.text).join(" – ")).join("\n"));
+      out.push(rows.map((r) => r.cells.sort((a, b) => a.bbox.x0 - b.bbox.x0).map((c) => c.text).join(" = ")).join("\n"));
     } else for (const b of g) for (const p of b.paragraphs) out.push(paragraph(p));
   }
   return out.filter(Boolean).join("\n\n");

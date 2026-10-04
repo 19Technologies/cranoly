@@ -4,14 +4,15 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  BookOpen, ChevronLeft, ClipboardCopy, Columns2, Command, GitFork, Layers, Link2, MoreHorizontal, PanelRight, PenLine, Pin, PinOff,
-  Plus, ListPlus, ScanText, Sparkles, SpellCheck, SquarePen, TextCursorInput, Trash2, WandSparkles,
+  BookOpen, ChevronLeft, ClipboardCopy, CodeXml, Columns2, Command, Layers, Link2, MoreHorizontal, Orbit, PanelRight, PenLine, Pin, PinOff,
+  Plus, ListPlus, ScanText, Sparkles, SpellCheck, SquarePen, TableProperties, TextCursorInput, Trash2, WandSparkles,
 } from "lucide-react";
 import { Note, ViewMode, titleOf } from "@/lib/vault";
 import { cardsOf, toast, useVault, vault } from "@/lib/store";
 import { setUI, useUI } from "@/lib/ui";
 import { focusEditor } from "@/lib/cm";
-import { checkWriting, findNewWords, makeCards, withEditor } from "@/lib/smart";
+import { addProperties, checkWriting, findNewWords, makeCards, withEditor } from "@/lib/smart";
+import { frontmatterOf } from "@/lib/properties";
 import MarkdownView from "./MarkdownView";
 import Sheet, { type Anchor } from "./Sheet";
 import Editor from "./Editor";
@@ -190,6 +191,7 @@ function NoteMenu({ note, onClose }: { note: Note; onClose: () => void }) {
   const [confirm, setConfirm] = useState(false);
   const cards = cardsOf(notes).filter((c) => c.noteId === note.id).length;
   const mode = workspace.mode;
+  const editing = mode !== "read";
   const item = (icon: React.ReactNode, label: string, run: () => void, extra = "") => (
     <button className={`sheet-item${extra}`} onClick={run}>
       {icon}
@@ -198,6 +200,11 @@ function NoteMenu({ note, onClose }: { note: Note; onClose: () => void }) {
   );
   const setMode = (m: ViewMode) => () => {
     vault.setMode(m);
+    onClose();
+  };
+  // Live preview and source mode are the two ways of editing.
+  const setSource = (on: boolean) => () => {
+    vault.setSource(on);
     onClose();
   };
   if (confirm) {
@@ -214,17 +221,19 @@ function NoteMenu({ note, onClose }: { note: Note; onClose: () => void }) {
       {item(<WandSparkles size={16} />, "Format with AI", () => { onClose(); setUI({ format: { noteId: note.id } }); })}
       <span className="menu-sep" />
       {item(<BookOpen size={16} />, "Reading view", setMode("read"), mode === "read" ? " is-current" : "")}
-      {item(<PenLine size={16} />, "Editing view", setMode("edit"), mode === "edit" ? " is-current" : "")}
+      {item(<PenLine size={16} />, "Live preview", setSource(false), editing && !workspace.source ? " is-current" : "")}
+      {item(<CodeXml size={16} />, "Source mode", setSource(true), editing && workspace.source ? " is-current" : "")}
       <span className="only-wide-flex">{item(<Columns2 size={16} />, "Split: edit and preview", setMode("split"), mode === "split" ? " is-current" : "")}</span>
       <span className="menu-sep" />
       {item(note.pinned ? <PinOff size={16} /> : <Pin size={16} />, note.pinned ? "Unpin note" : "Pin note", () => { onClose(); vault.togglePin(note.id); })}
       {item(<TextCursorInput size={16} />, "Rename…", () => { onClose(); setUI({ pendingRename: note.id }); })}
+      {item(<TableProperties size={16} />, frontmatterOf(note.content) ? "Edit properties" : "Add properties", () => { onClose(); withEditor(addProperties); })}
       {cards > 0 &&
         item(<Layers size={16} />, `Study ${cards} ${cards === 1 ? "card" : "cards"}`, () => { onClose(); router.push(`/flashcards/study?note=${note.id}`); })}
       <span className="only-mobile-flex">
         {item(<Link2 size={16} />, "Backlinks, cards and outline", () => { onClose(); setUI({ mobileRight: true }); })}
       </span>
-      {item(<GitFork size={16} />, "Open graph view", () => { onClose(); router.push("/graph"); })}
+      {item(<Orbit size={16} />, "Open the Mind Map", () => { onClose(); router.push("/mind-map"); })}
       <span className="menu-sep" />
       {item(<SpellCheck size={16} />, "Check my writing", () => { onClose(); withEditor(checkWriting); })}
       {item(<Sparkles size={16} />, "Find new words", () => { onClose(); withEditor(findNewWords); })}
@@ -241,6 +250,30 @@ function NoteMenu({ note, onClose }: { note: Note; onClose: () => void }) {
   );
 }
 
+/**
+ * The button that switches between reading and editing. It names where it takes you: "Edit" while you read,
+ * "Read" while you edit. The new word slides in when it changes.
+ */
+function ModeButton({ mode, className }: { mode: ViewMode; className: string }) {
+  const reading = mode === "read";
+  return (
+    <button
+      className={className}
+      aria-label={reading ? "Edit note" : "Read note"}
+      title={reading ? "Switch to editing (⌘E)" : "Switch to reading (⌘E)"}
+      onClick={() => {
+        (document.activeElement as HTMLElement | null)?.blur();
+        vault.setMode(reading ? "edit" : "read");
+      }}
+    >
+      <span key={reading ? "edit" : "read"} className="mode-word">
+        {reading ? <PenLine size={15} /> : <BookOpen size={15} />}
+        {reading ? "Edit" : "Read"}
+      </span>
+    </button>
+  );
+}
+
 /** The note's toolbar on bigger screens: editing, quick tools, the links panel and more. */
 function NoteToolbar({ note, mode }: { note: Note; mode: ViewMode }) {
   const router = useRouter();
@@ -253,8 +286,11 @@ function NoteToolbar({ note, mode }: { note: Note; mode: ViewMode }) {
   );
   return (
     <div className="note-toolbar">
-      {tool(mode === "read" ? "Edit (⌘E)" : "Reading view (⌘E)", mode === "read" ? <PenLine size={17} /> : <BookOpen size={17} />, () =>
-        vault.setMode(mode === "read" ? "edit" : "read"),
+      <ModeButton mode={mode} className="btn tb-mode" />
+      {mode !== "read" && workspace.source && (
+        <button className="chip on tb-source" title="Source mode: every symbol shows. Tap for the live preview." onClick={() => vault.setSource(false)}>
+          <CodeXml size={13} /> Source
+        </button>
       )}
       <span className="tb-sep" />
       {tool("Add a word", <Plus size={18} />, () => setUI({ addWord: { noteId: note.id, mode: "word" } }))}
@@ -293,7 +329,7 @@ function NoteToolbar({ note, mode }: { note: Note; mode: ViewMode }) {
   );
 }
 
-/** Phone header, as in Apple Notes: back to the list, then Edit / Done and more. */
+/** Phone header, as in Apple Notes: back to the list, then more and the Edit / Read button. */
 function MobileHeader({ note, mode }: { note?: Note; mode: ViewMode }) {
   const [menu, setMenu] = useState(false);
   const router = useRouter();
@@ -308,16 +344,7 @@ function MobileHeader({ note, mode }: { note?: Note; mode: ViewMode }) {
           <button className="icon-btn" aria-label="More options" onClick={() => setMenu(true)}>
             <MoreHorizontal size={22} />
           </button>
-          <button
-            className="mobile-mode"
-            aria-label={mode === "read" ? "Edit note" : "Done editing"}
-            onClick={() => {
-              (document.activeElement as HTMLElement | null)?.blur();
-              vault.setMode(mode === "read" ? "edit" : "read");
-            }}
-          >
-            {mode === "read" ? "Edit" : "Done"}
-          </button>
+          <ModeButton mode={mode} className="mobile-mode" />
           <Sheet open={menu} onClose={() => setMenu(false)} title={titleOf(note.path)}>
             <NoteMenu note={note} onClose={() => setMenu(false)} />
           </Sheet>

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight, ChevronDown, GitFork, Layers, Link2, ListTree } from "lucide-react";
+import { ArrowUpRight, ChevronDown, Layers, Link2, ListTree, Orbit } from "lucide-react";
 import { Note, folderOf, titleOf } from "@/lib/vault";
 import { extractHeadings, stripInline, unlinkedMentions } from "@/lib/links";
 import { buildGraph } from "@/lib/graph";
@@ -16,7 +16,7 @@ const TABS: Array<{ id: RightTab; label: string; icon: React.ReactNode }> = [
   { id: "outgoing", label: "Outgoing links", icon: <ArrowUpRight size={17} /> },
   { id: "cards", label: "Flashcards", icon: <Layers size={17} /> },
   { id: "outline", label: "Outline", icon: <ListTree size={17} /> },
-  { id: "graph", label: "Local graph", icon: <GitFork size={17} /> },
+  { id: "graph", label: "Mind Map", icon: <Orbit size={17} /> },
 ];
 
 function Snippet({ text, target }: { text: string; target: string }) {

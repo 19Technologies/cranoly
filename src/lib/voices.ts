@@ -29,7 +29,7 @@ const configUrl = (lang: Language) => modelUrl(lang) + ".json";
 
 export interface VoiceState {
   status: "none" | "waiting" | "downloading" | "ready" | "error";
-  /** 0–1 while downloading. */
+  /** 0 to 1 while downloading. */
   progress: number;
   error?: string;
 }

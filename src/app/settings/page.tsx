@@ -17,7 +17,7 @@ function Appearance() {
   const { settings } = useVault();
   const options = [
     { id: "paper", label: "Paper", hint: "Warm and light", icon: <Sun size={18} /> },
-    { id: "graphite", label: "Graphite", hint: "Obsidian black", icon: <Moon size={18} /> },
+    { id: "graphite", label: "Graphite", hint: "Graphite black", icon: <Moon size={18} /> },
     { id: "system", label: "System", hint: "Follow device", icon: <MonitorSmartphone size={18} /> },
   ] as const;
   const seg = useSlider<HTMLDivElement>(".is-on", settings.theme);
@@ -106,7 +106,7 @@ function LanguageSettings() {
       </div>
       <p className="setting-note">
         Used for pronunciation, Explain, Check my writing and new-word lists. With more than one language, each gets its
-        own words note and you can switch on Home.
+        own words note, and Practice and the Dictionary let you switch between them.
         {!learning.grammar && ` Check my writing isn\u2019t available for ${learning.name} yet.`}
       </p>
       <Toggle
@@ -255,8 +255,8 @@ export default function SettingsPage() {
       </section>
 
       <section className="card-panel">
-        <div className="card-panel-head"><h2>Graph</h2></div>
-        <Toggle field="showTagsInGraph" label="Show tags" hint="Draw #tags as rings linked to the notes that use them." />
+        <div className="card-panel-head"><h2>Mind Map</h2></div>
+        <Toggle field="showTagsInGraph" label="Show tags" hint="Draw #tags as their own dots, linked to the notes that use them." />
         <Toggle field="showOrphansInGraph" label="Show orphans" hint="Include notes that don't link to anything." />
       </section>
 

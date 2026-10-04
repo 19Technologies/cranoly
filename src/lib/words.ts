@@ -2,10 +2,11 @@
 // mined for words you don't have cards for yet.
 import type { Card } from "./cards";
 import type { Language } from "./languages";
+import { bodyOf, frontmatterOf } from "./properties";
 
 const BULLET = /^\s*(?:[-*+]\s+|\d+[.)]\s+)/;
 
-/** "Hund – dog", "Hund = dog", "Hund: dog", "Hund<tab>dog" → ["Hund", "dog"]. */
+/** "Hund = dog", "Hund - dog", "Hund: dog", "Hund<tab>dog" (and long dashes) → ["Hund", "dog"]. */
 export function pairOf(line: string): [string, string] | null {
   if (/\s:{2,3}(\s|$)/.test(line) || /^\s*(#|>|```)/.test(line)) return null;
   const body = line.replace(BULLET, "");
@@ -21,7 +22,8 @@ export function pairOf(line: string): [string, string] | null {
 
 /** How many lines of `text` are word pairs, if it looks like a word list (0 if it doesn't). */
 export function wordListSize(text: string) {
-  const lines = text.split("\n").filter((l) => l.trim());
+  // "title: Hold On" in a properties block reads like a pair, but isn't one.
+  const lines = bodyOf(text).split("\n").filter((l) => l.trim());
   if (lines.length < 2) return 0;
   const pairs = lines.filter((l) => pairOf(l)).length;
   return pairs >= 2 && pairs / lines.length >= 0.7 ? pairs : 0;
@@ -29,7 +31,9 @@ export function wordListSize(text: string) {
 
 /** Rewrite each word-pair line as a flashcard, leaving other lines alone. */
 export function toCards(text: string) {
-  return text
+  const fm = frontmatterOf(text);
+  const head = fm ? text.slice(0, fm.length) : "";
+  return head + text.slice(head.length)
     .split("\n")
     .map((line) => {
       const pair = pairOf(line);

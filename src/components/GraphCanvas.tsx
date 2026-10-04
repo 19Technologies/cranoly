@@ -55,45 +55,45 @@ export default function GraphCanvas({
     return id === h || !!data.neighbours.get(h)?.has(id);
   };
 
-  const radius = (n: GraphNode) => (compact ? 3 : 3.2) + Math.sqrt(n.degree) * (compact ? 1 : 1.4);
+  // Small dots, like stars: half the size they used to be. Busy notes are a little bigger.
+  const radius = (n: GraphNode) => (compact ? 1.5 : 1.6) + Math.sqrt(n.degree) * (compact ? 0.5 : 0.7);
 
-  // Flat, Obsidian-like rendering: grey nodes and links; the open note is white; hovered links turn green.
+  // Each top-level folder gets its own colour from the --mm palette; notes at the top level use --mm-0.
+  const folders = [...new Set(data.nodes.flatMap((n) => (n.folder ? [n.folder] : [])))].sort();
+  const colourOf = (node: GraphNode) => {
+    if (node.kind === "tag") return cssVar("--mm-tag", "#e088f2");
+    if (node.kind === "ghost") return cssVar("--mm-ghost", "#5b648f");
+    if (!node.folder) return cssVar("--mm-0", "#94a5f9");
+    return cssVar(`--mm-${(folders.indexOf(node.folder) % 8) + 1}`, "#a677f8");
+  };
+
+  // Flat dots on a night sky: saturated colours, faint lines; the open note is the brightest; hovered links turn green.
   const drawNode = (node: GraphNode, ctx: CanvasRenderingContext2D, scale: number) => {
-    const focused = cssVar("--graph-node-focused", "#f4f4f5");
-    const tagColor = cssVar("--graph-node-tag", "#6f6f78");
-    const nodeColor = cssVar("--graph-node", "#9a9a9a");
-    const faint = cssVar("--graph-node-unresolved", "#5a5a5a");
-    const text = cssVar("--text-normal", "#dadada");
+    const focused = cssVar("--mm-focus", "#ffffff");
+    const text = cssVar("--mm-label", "#e6e8ff");
     const x = node.x ?? 0;
     const y = node.y ?? 0;
-    const r = radius(node);
+    const isOpen = node.noteId !== undefined && node.noteId === activeId;
+    const r = radius(node) * (isOpen ? 1.6 : 1);
     const hovered = hover.current === node.id;
     const lit = isLit(node.id);
     const matches = !q || node.label.toLowerCase().includes(q);
-    const isActive = node.noteId !== undefined && node.noteId === activeId;
-    const dim = (!lit || !matches) && !isActive;
+    const dim = (!lit || !matches) && !isOpen;
 
     ctx.save();
-    ctx.globalAlpha = dim ? 0.2 : 1;
+    ctx.globalAlpha = dim ? 0.18 : 1;
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI * 2);
-    ctx.fillStyle =
-      hovered || isActive || (q && matches && node.kind === "note")
-        ? focused
-        : node.kind === "tag"
-          ? tagColor
-          : node.kind === "ghost"
-            ? faint
-            : nodeColor;
+    ctx.fillStyle = hovered || isOpen || (q && matches && node.kind === "note") ? focused : colourOf(node);
     ctx.fill();
 
-    const showLabel = hovered || (hover.current && lit) || (q && matches) || scale > (compact ? 1.4 : 1.1);
+    const showLabel = hovered || (hover.current && lit) || (q && matches) || scale > (compact ? 1.6 : 1.3);
     if (showLabel && !dim) {
-      const fontSize = Math.max(12 / scale, 2);
+      const fontSize = Math.max(10.5 / scale, 1.8);
       ctx.font = `${hovered ? 600 : 400} ${fontSize}px ${cssVar("--font-ui", "system-ui")}, system-ui, sans-serif`;
       ctx.textAlign = "center";
       ctx.textBaseline = "top";
-      ctx.fillStyle = withAlpha(text, hovered || isActive ? 1 : 0.8);
+      ctx.fillStyle = withAlpha(text, hovered || isOpen ? 0.95 : 0.7);
       ctx.fillText(node.label, x, y + r + 2 / scale + 1);
     }
     ctx.restore();
@@ -102,10 +102,11 @@ export default function GraphCanvas({
   const linkColor = (link: { source?: unknown; target?: unknown }) => {
     const s = (link.source as GraphNode)?.id;
     const t = (link.target as GraphNode)?.id;
-    const line = cssVar("--graph-line", "#4a4a4a");
+    const line = cssVar("--mm-line", "rgba(170, 180, 255, 0.16)");
     // Links are the only thing drawn in green.
     if (hover.current && (s === hover.current || t === hover.current)) return cssVar("--link", "#c5e8b2");
-    if (hover.current) return withAlpha(line, 0.3);
+    // Lines that aren't the hovered note's fade further while one is hovered.
+    if (hover.current) return line.replace(/[\d.]+\)$/, (a) => `${Number(a.slice(0, -1)) * 0.4})`);
     return line;
   };
 
@@ -125,14 +126,15 @@ export default function GraphCanvas({
           nodePointerAreaPaint={(n, color, ctx) => {
             ctx.fillStyle = color;
             ctx.beginPath();
-            ctx.arc(n.x ?? 0, n.y ?? 0, radius(n as GraphNode) + 3, 0, Math.PI * 2);
+            // The tap target stays finger-sized while the dot is small.
+            ctx.arc(n.x ?? 0, n.y ?? 0, radius(n as GraphNode) + 6, 0, Math.PI * 2);
             ctx.fill();
           }}
           linkColor={linkColor as never}
           linkWidth={(l) => {
             const s = ((l as { source: GraphNode }).source as GraphNode)?.id;
             const t = ((l as { target: GraphNode }).target as GraphNode)?.id;
-            return hover.current && (s === hover.current || t === hover.current) ? 1.4 : 1;
+            return hover.current && (s === hover.current || t === hover.current) ? 1.2 : 0.7;
           }}
           autoPauseRedraw={false}
           cooldownTicks={compact ? 80 : 160}

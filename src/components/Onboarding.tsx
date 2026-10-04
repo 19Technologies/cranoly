@@ -33,7 +33,7 @@ function DemoLinks() {
       </div>
       <div className="ob-suggest">
         <span className="ob-suggest-row is-active">Create note “Verben”</span>
-        <span className="ob-suggest-row">Verbs – sein &amp; haben</span>
+        <span className="ob-suggest-row">Verbs: sein &amp; haben</span>
       </div>
     </div>
   );
@@ -59,6 +59,43 @@ function DemoCards() {
           <span className={`ob-pill tint-${tint}`}>{label}</span>
         </div>
       ))}
+    </div>
+  );
+}
+
+/** A note whose button flips between Edit and Read, the way it does in the app. */
+function DemoModes() {
+  const { settings } = useVault();
+  const ex = cardExamples(settings.learning, settings.native);
+  const [reading, setReading] = useState(true);
+  useEffect(() => {
+    const t = setInterval(() => setReading((r) => !r), 2200);
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <div className="ob-demo ob-demo-modes" aria-hidden>
+      <div className="ob-modes-bar">
+        <span className="ob-modes-title">My words</span>
+        <span className="ob-modes-pill">
+          <span key={reading ? "edit" : "read"} className="mode-word">
+            {reading ? "Edit" : "Read"}
+          </span>
+        </span>
+      </div>
+      <div className="ob-modes-body" key={reading ? "r" : "e"}>
+        {reading ? (
+          <p>
+            <b>{ex.one.front}</b> means {ex.one.back}.
+          </p>
+        ) : (
+          <p>
+            <span className="ob-bracket">**</span>
+            <b>{ex.one.front}</b>
+            <span className="ob-bracket">**</span> means {ex.one.back}.<span className="ob-caret" />
+          </p>
+        )}
+        <small>{reading ? "Reading: clean, tap links and flip cards." : "Editing: the formatting shows as you type."}</small>
+      </div>
     </div>
   );
 }
@@ -97,11 +134,11 @@ function DemoStudy() {
 
 function DemoGraph() {
   const nodes: Array<[number, number, number, string]> = [
-    [150, 80, 11, "Greetings"],
-    [60, 50, 7, "Welcome"],
-    [240, 45, 7, "Verbs"],
-    [85, 140, 8, "Cases"],
-    [230, 140, 6, "Daily"],
+    [150, 80, 6, "Greetings"],
+    [60, 50, 4, "Welcome"],
+    [240, 45, 4, "Verbs"],
+    [85, 140, 4.5, "Cases"],
+    [230, 140, 3.5, "Daily"],
   ];
   const links: Array<[number, number]> = [[0, 1], [0, 2], [0, 3], [0, 4], [1, 3], [2, 3]];
   return (
@@ -119,7 +156,7 @@ function DemoGraph() {
         ))}
         {nodes.map(([x, y, r, label], i) => (
           <g key={label}>
-            <circle cx={x} cy={y} r={r} className={i === 0 ? "ob-node is-active" : "ob-node"} />
+            <circle cx={x} cy={y} r={r} className={i === 0 ? "ob-node is-active" : "ob-node"} style={{ fill: i ? `var(--mm-${i})` : undefined }} />
             <text x={x} y={y + r + 13} textAnchor="middle" className="ob-label">
               {label}
             </text>
@@ -241,11 +278,23 @@ const STEPS: Step[] = [
   {
     eyebrow: "Welcome",
     title: "Notes that connect.",
-    body: "Cranoly is a notebook for learning languages. Your notes link together like Obsidian, and your flashcards live right inside them.",
+    body: "Cranoly is a notebook for learning languages. Your notes link together, and your flashcards live right inside them.",
     demo: <DemoWelcome />,
   },
   {
-    eyebrow: "Step 1 · Links",
+    eyebrow: "Step 1 · Read and edit",
+    title: "Read or edit.",
+    body: (
+      <>
+        Every note has two views. <b>Read</b> shows it cleanly, with links to tap and cards to flip. <b>Edit</b> is where you
+        change it, and the formatting shows as you type. The button at the top names where it takes you: <b>Edit</b> while
+        you read, <b>Read</b> while you edit. For full control, <b>Source mode</b> in the ••• menu shows every symbol.
+      </>
+    ),
+    demo: <DemoModes />,
+  },
+  {
+    eyebrow: "Step 2 · Links",
     title: "Link your ideas.",
     body: (
       <>
@@ -256,7 +305,7 @@ const STEPS: Step[] = [
     demo: <DemoLinks />,
   },
   {
-    eyebrow: "Step 2 · Flashcards",
+    eyebrow: "Step 3 · Flashcards",
     title: "Write cards as you write notes.",
     body: (
       <>
@@ -267,19 +316,19 @@ const STEPS: Step[] = [
     demo: <DemoCards />,
   },
   {
-    eyebrow: "Step 3 · Study",
+    eyebrow: "Step 4 · Study",
     title: "Flip through your decks.",
-    body: "Open Flashcards and pick a deck. Tap or press Space to flip, swipe or use the arrows to move. Your study days fill the activity heatmap.",
+    body: "Open Practice and pick a deck. Tap or press Space to flip, swipe or use the arrows to move. Your study days fill the activity heatmap.",
     demo: <DemoStudy />,
   },
   {
-    eyebrow: "Step 4 · Connections",
+    eyebrow: "Step 5 · Connections",
     title: "See how it all fits.",
-    body: "The right sidebar shows which notes link to the one you're reading. Graph view draws your whole vault. Tap any dot to open that note.",
+    body: "The right sidebar shows which notes link to the one you're reading. The Mind Map draws all your notes, like stars. Tap any dot to open that note.",
     demo: <DemoGraph />,
   },
   {
-    eyebrow: "Step 5 · Smart tools",
+    eyebrow: "Step 6 · Smart tools",
     title: "Your notebook helps you learn.",
     body: (
       <>
@@ -290,7 +339,7 @@ const STEPS: Step[] = [
     demo: <DemoSmart />,
   },
   {
-    eyebrow: "Step 6 · Speed",
+    eyebrow: "Step 7 · Speed",
     title: "Move fast.",
     body: "A few shortcuts and gestures get you anywhere in a second.",
     demo: <DemoShortcuts />,

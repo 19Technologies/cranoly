@@ -21,7 +21,7 @@ function hourNow() {
   return new Date().getHours();
 }
 
-/** The current hour (0–23), or null while rendering on the server. */
+/** The current hour (0 to 23), or null while rendering on the server. */
 export function useHour() {
   return useSyncExternalStore(subscribe, hourNow, () => null);
 }

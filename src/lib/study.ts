@@ -78,15 +78,32 @@ export function fromRecentNotes(cards: Card[], notes: Record<string, Note>, toda
   return cards.filter((c) => (notes[c.noteId]?.updated ?? 0) >= cutoff);
 }
 
-/** The language a card is in: its words note's ("Spanish words"), else the one being learned. */
-export function cardLanguage(card: Card, notes: Record<string, Note>, settings: Settings) {
-  const path = notes[card.noteId]?.path;
-  return settings.languages.find((c) => path === `${languageOf(c).name} words`) ?? settings.learning;
+/**
+ * The language a note is in, when where it lives says so: its words note ("Spanish words"), or a top-level folder
+ * named after the language ("German/Greetings"). Other notes don't belong to one language.
+ */
+export function noteLanguage(path: string | undefined, settings: Settings) {
+  if (!path) return null;
+  const slash = path.indexOf("/");
+  const top = slash === -1 ? null : path.slice(0, slash).toLowerCase();
+  return (
+    settings.languages.find((c) => {
+      const name = languageOf(c).name;
+      return path === `${name} words` || top === name.toLowerCase();
+    }) ?? null
+  );
 }
 
-/** Leave out the words of the other languages being learned (other notes stay in). */
+/** The language a card is in: its note's language, else the one being learned. */
+export function cardLanguage(card: Card, notes: Record<string, Note>, settings: Settings) {
+  return noteLanguage(notes[card.noteId]?.path, settings) ?? settings.learning;
+}
+
+/** Leave out the cards of the other languages being learned (notes that belong to no language stay in). */
 export function forLanguage(cards: Card[], notes: Record<string, Note>, settings: Settings, code = settings.learning) {
   if (settings.languages.length < 2) return cards;
-  const others = new Set(settings.languages.filter((c) => c !== code).map((c) => `${languageOf(c).name} words`));
-  return cards.filter((c) => !others.has(notes[c.noteId]?.path ?? ""));
+  return cards.filter((c) => {
+    const lang = noteLanguage(notes[c.noteId]?.path, settings);
+    return !lang || lang === code;
+  });
 }

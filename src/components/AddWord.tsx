@@ -183,7 +183,7 @@ function ListForm({ noteId }: { noteId: string | null }) {
           autoFocus
           rows={7}
           value={text}
-          placeholder={"Hund – dog\nKatze – cat\nHaus = house"}
+          placeholder={"Hund = dog\nKatze = cat\nHaus = house"}
           onChange={(e) => setText(e.target.value)}
         />
       </label>

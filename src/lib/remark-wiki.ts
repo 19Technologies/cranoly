@@ -1,5 +1,6 @@
-// remark plugin: [[wikilinks]], ==highlights==, #tags, > [!callouts] and flashcard lines.
+// remark plugin: [[wikilinks]], ==highlights==, #tags, > [!callouts], the properties block and flashcard lines.
 import { CALLOUT_RE, calloutTitle } from "./callouts";
+import { parseProperties, showDate, type PropertyValue } from "./properties";
 import { parseWikiInner } from "./links";
 
 interface MdNode {
@@ -53,7 +54,7 @@ function splitInline(value: string): MdNode[] {
   }
   if (last < value.length) out.push(text(value.slice(last)));
   if (!out.length) out.push(text(value));
-  // Obsidian shows single line breaks as breaks ("strict line breaks" off).
+  // Single line breaks show as breaks, as people expect in notes ("strict line breaks" off).
   return out.flatMap((n) =>
     n.type === "text" && n.value!.includes("\n")
       ? n.value!.split("\n").flatMap((part, i) => (i ? [{ type: "break" }, ...(part ? [text(part)] : [])] : part ? [text(part)] : []))
@@ -157,8 +158,55 @@ function markCallouts(node: MdNode) {
   if (!para.children!.length) node.children.splice(1, 1);
 }
 
+/** An element with a tag and class, for building the properties table. */
+const el = (hName: string, className: string | null, children: MdNode[]): MdNode => ({
+  type: "kbEl",
+  data: { hName, hProperties: className ? { className: [className] } : {} },
+  children,
+});
+
+/** One property's value: tags as tag links, lists as chips, dates in words, "Yes" or "No". */
+function valueNodes(key: string, value: PropertyValue): MdNode[] {
+  const items = Array.isArray(value) ? value : null;
+  if (/^tags?$/i.test(key) && value !== null) {
+    return (items ?? String(value).split(/[,\s]+/))
+      .map((t) => String(t ?? "").replace(/^#/, "").trim())
+      .filter(Boolean)
+      .map((tag) => ({
+        type: "link",
+        url: `#tag/${encodeURIComponent(tag)}`,
+        children: [text(`#${tag}`)],
+        data: { hProperties: { className: ["tag"] } },
+      }));
+  }
+  if (items) return items.map((item) => el("span", "prop-chip", [text(String(item ?? ""))]));
+  if (value === null || value === "") return [];
+  return [text(typeof value === "boolean" ? (value ? "Yes" : "No") : typeof value === "string" ? showDate(value) : String(value))];
+}
+
+/** The properties block at the top of a note (remark-frontmatter's "yaml" node), drawn as a small table. */
+function markProperties(tree: MdNode) {
+  const first = tree.children?.[0];
+  if (first?.type !== "yaml") return;
+  const props = parseProperties(first.value ?? "");
+  const body = props
+    ? [
+        el(
+          "dl",
+          "properties-list",
+          props.map(({ key, value }) => {
+            const nodes = valueNodes(key, value);
+            return el("div", "properties-row", [el("dt", null, [text(key)]), el("dd", nodes.length ? null : "is-empty", nodes)]);
+          }),
+        ),
+      ]
+    : [{ type: "code", value: first.value ?? "" }, el("p", "properties-error", [text("Couldn’t read these properties.")])];
+  tree.children![0] = el("div", "properties", [el("div", "properties-title", [text("Properties")]), ...body]);
+}
+
 export function remarkWiki(options: { cards?: boolean } = {}) {
   return (tree: MdNode) => {
+    markProperties(tree);
     markCallouts(tree);
     if (options.cards) markCards(tree);
     walkInline(tree);

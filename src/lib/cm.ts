@@ -121,7 +121,7 @@ export function linkSelection(view: EditorView) {
   return wrap(view, "[[", "]]");
 }
 
-/** Obsidian-style bracket pairing: "[[" becomes "[[]]" with the caret inside; "]" steps over a closing bracket. */
+/** Bracket pairing: "[[" becomes "[[]]" with the caret inside; "]" steps over a closing bracket. */
 export const pairBrackets = EditorView.inputHandler.of((view, from, to, text) => {
   if (from !== to) return false;
   const { state } = view;

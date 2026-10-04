@@ -2,22 +2,20 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FileText, House, Layers, Plus, Search } from "lucide-react";
+import { FileText, Plus, Search } from "lucide-react";
 import { useVault } from "@/lib/store";
 import { setUI, useUI } from "@/lib/ui";
 import { useSlider } from "@/lib/useSlider";
 import { haptic } from "@/lib/native";
 
-/** Phone tab bar: the four places you go, with ＋ (add a word) in the middle. The orange pill slides between tabs. */
+/** Phone tab bar: Notes, ＋ (add a word) in the middle, and Search. The orange pill slides between the tabs. */
 export default function MobileNav() {
   const { editorFocused } = useUI();
   const { workspace } = useVault();
   const pathname = usePathname();
   const tabs = [
-    { href: "/home", label: "Home", icon: <House size={21} />, active: pathname === "/home" },
     { href: "/notes", label: "Notes", icon: <FileText size={21} />, active: pathname === "/notes" || pathname === "/" },
     null,
-    { href: "/flashcards", label: "Practice", icon: <Layers size={21} />, active: pathname.startsWith("/flashcards") },
     { href: "/search", label: "Search", icon: <Search size={21} />, active: pathname === "/search" },
   ];
   // Practice gets the whole screen.

@@ -159,7 +159,7 @@ function useTheme(choice: "paper" | "graphite" | "system", ready: boolean) {
   }, [choice, ready]);
 }
 
-// Phones open on Home. Only on launch: later visits to "/" are someone opening a note.
+// Phones open on the notes list. Only on launch: later visits to "/" are someone opening a note.
 let launched = false;
 
 export default function AppShell({ children }: { children: ReactNode }) {
@@ -211,7 +211,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
     if (!ready || launched) return;
     launched = true;
     const phone = window.matchMedia("(max-width: 820px)").matches;
-    if (phone && pathname === "/" && !new URLSearchParams(window.location.search).has("note")) router.replace("/home");
+    if (phone && pathname === "/" && !new URLSearchParams(window.location.search).has("note")) router.replace("/notes");
   }, [ready, pathname, router]);
 
   return (
@@ -224,7 +224,8 @@ export default function AppShell({ children }: { children: ReactNode }) {
       data-mobile-right={mobileRight ? "open" : "closed"}
       data-editing={editorFocused ? "true" : undefined}
     >
-      {ready && !phone && <Sidebar />}
+      {/* On phones the sidebar is the ☰ drawer. */}
+      {ready && <Sidebar />}
       <div className="drawer-scrim" onClick={() => setUI({ mobileLeft: false, mobileRight: false })} />
 
       {pathname === "/" && !phone && <div className="list-col">{ready && <NoteList variant="column" />}</div>}

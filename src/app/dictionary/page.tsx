@@ -1,17 +1,195 @@
 "use client";
 
-import { useEffect } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getVault, vault } from "@/lib/store";
+import { BookA, FileText, Plus, Search, Volume2, X } from "lucide-react";
+import LanguageSwitch from "@/components/LanguageSwitch";
+import Sheet from "@/components/Sheet";
+import Tumble from "@/components/Tumble";
+import { entriesOf, letterOf, searchEntries, type Entry } from "@/lib/dictionary";
+import { languageOf } from "@/lib/languages";
+import { say } from "@/lib/smart";
+import { useCards, useVault, vault } from "@/lib/store";
+import { setUI } from "@/lib/ui";
+import { useToday } from "@/lib/useToday";
+import { titleOf } from "@/lib/vault";
 
-// The old Dictionary page now lives in a note, where every "word :: meaning" line is a flashcard.
-export default function DictionaryRedirect() {
+const hash = (s: string) => [...s].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
+
+/** "der Bahnhof", with the article quiet so the eye lands on the word. */
+function Word({ entry }: { entry: Entry }) {
+  return (
+    <>
+      {entry.article && <span className="dict-article">{entry.article} </span>}
+      {entry.head}
+    </>
+  );
+}
+
+/** Your own dictionary: every word you've saved, A to Z, with its meaning and a way to hear it. */
+export default function DictionaryPage() {
   const router = useRouter();
-  useEffect(() => {
-    const note = Object.values(getVault().notes).find((n) => n.path === "Vocabulary/Dictionary");
-    if (note) vault.openNote(note.id);
-    else vault.createNote({ folder: "Vocabulary", title: "Dictionary", content: "#vocabulary\n\nword :: meaning\n" });
-    router.replace("/");
-  }, [router]);
-  return null;
+  const { notes, settings } = useVault();
+  const cards = useCards();
+  const today = useToday();
+  const lang = languageOf(settings.learning);
+  const entries = useMemo(() => entriesOf(cards, notes, settings), [cards, notes, settings]);
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState<Entry | null>(null);
+  const [revealed, setRevealed] = useState(false);
+
+  const shown = useMemo(() => searchEntries(entries, query), [entries, query]);
+  const groups = useMemo(() => {
+    const out: Array<{ letter: string; entries: Entry[] }> = [];
+    for (const e of shown) {
+      const letter = letterOf(e);
+      const last = out.at(-1);
+      if (last?.letter === letter) last.entries.push(e);
+      else out.push({ letter, entries: [e] });
+    }
+    return out;
+  }, [shown]);
+  const daily = today && entries.length > 2 ? entries[hash(today) % entries.length] : null;
+
+  const add = () => setUI({ addWord: { noteId: null, mode: "word" } });
+  const openNote = (source: Entry["sources"][number]) => {
+    setOpen(null);
+    vault.openNote(source.noteId);
+    vault.setMode("edit");
+    setUI({ pendingLine: source.line });
+    router.push("/");
+  };
+
+  return (
+    <div className="page page-narrow dict-page">
+      <header className="page-header">
+        <p className="eyebrow">
+          <span className="dot" /> Your words
+        </p>
+        <div className="dict-title">
+          <h1>Dictionary</h1>
+          <button className="btn btn-primary" onClick={add}>
+            <Tumble label="Add a word">
+              <Plus size={16} /> Add a word
+            </Tumble>
+          </button>
+        </div>
+        <p className="page-lede">
+          {entries.length
+            ? `${entries.length} ${lang.name} ${entries.length === 1 ? "word" : "words"} from your notes. New words show up here as soon as you save them.`
+            : `Every ${lang.name} word you save shows up here, A to Z.`}
+        </p>
+        <LanguageSwitch />
+      </header>
+
+      {!entries.length ? (
+        <section className="card-panel dict-empty">
+          <BookA size={28} />
+          <h2>Words you save show up here</h2>
+          <p>Add a word with ＋, paste a word list, or scan a page. Each one lands in your dictionary with its meaning.</p>
+          <button className="btn btn-primary btn-lg" onClick={add}>
+            <Plus size={17} /> Add a word
+          </button>
+        </section>
+      ) : (
+        <>
+          {daily && !query && (
+            <section className="dict-daily">
+              <h3>Word of the day</h3>
+              <div className="dict-daily-row">
+                <button
+                  className="dict-daily-card"
+                  onClick={() => setRevealed((r) => !r)}
+                  aria-label={revealed ? "Hide the meaning" : "Show the meaning"}
+                >
+                  <b>
+                    <Word entry={daily} />
+                  </b>
+                  <span>{revealed ? daily.meanings.join(", ") : "Tap to see the meaning"}</span>
+                </button>
+                <button className="icon-btn" onClick={() => say(daily.word, lang)} aria-label={`Hear ${daily.word}`}>
+                  <Volume2 size={19} />
+                </button>
+              </div>
+            </section>
+          )}
+
+          <label className="search-box dict-search">
+            <Search size={15} />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search words or meanings"
+              aria-label="Search your dictionary"
+            />
+            {query && (
+              <button className="icon-btn" aria-label="Clear search" onClick={() => setQuery("")}>
+                <X size={14} />
+              </button>
+            )}
+          </label>
+
+          {!shown.length && <p className="dict-none">No word or meaning matches “{query}”.</p>}
+
+          {groups.map((g) => (
+            <section key={g.letter} className="dict-group" aria-label={g.letter}>
+              <h2 className="dict-letter">{g.letter}</h2>
+              <ul>
+                {g.entries.map((e) => (
+                  <li key={e.word} className="dict-entry">
+                    <button className="dict-row" onClick={() => setOpen(e)}>
+                      <b className="dict-word">
+                        <Word entry={e} />
+                      </b>
+                      <span className="dict-meaning">{e.meanings.join(", ")}</span>
+                    </button>
+                    <button className="icon-btn dict-say" onClick={() => say(e.word, lang)} aria-label={`Hear ${e.word}`}>
+                      <Volume2 size={17} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+        </>
+      )}
+
+      <Sheet open={!!open} onClose={() => setOpen(null)} title={open ? open.word : undefined} className="dict-sheet">
+        {open && (
+          <div className="dict-detail">
+            <ul className="dict-meanings">
+              {open.meanings.map((m) => (
+                <li key={m}>{m}</li>
+              ))}
+            </ul>
+            <div className="dict-actions">
+              <button className="btn" onClick={() => say(open.word, lang)}>
+                <Volume2 size={15} /> Hear it
+              </button>
+              <button
+                className="btn"
+                onClick={() => {
+                  const word = open.word;
+                  setOpen(null);
+                  setUI({ explain: { word, noteId: open.sources[0]?.noteId ?? null } });
+                }}
+              >
+                <BookA size={15} /> Explain
+              </button>
+            </div>
+            <div className="sheet-list">
+              {open.sources.map((s) =>
+                notes[s.noteId] ? (
+                  <button key={`${s.noteId}:${s.line}`} className="sheet-item" onClick={() => openNote(s)}>
+                    <FileText size={16} />
+                    <span>Open in “{titleOf(notes[s.noteId].path)}”</span>
+                  </button>
+                ) : null,
+              )}
+            </div>
+          </div>
+        )}
+      </Sheet>
+    </div>
+  );
 }

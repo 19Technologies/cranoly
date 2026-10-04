@@ -6,7 +6,7 @@ import { createPortal } from "react-dom";
 export type Anchor = { x: number; y: number } | null;
 
 /**
- * Obsidian-style menus. On phones: a bottom sheet you can drag down to dismiss.
+ * Menus. On phones: a bottom sheet you can drag down to dismiss.
  * On desktop with an anchor: a dropdown menu at that point.
  */
 export default function Sheet({

@@ -27,14 +27,17 @@ export class LookupError extends Error {}
 const API = "https://en.wiktionary.org";
 const cache = new Map<string, Promise<Lookup | null>>();
 
-const ENTITIES: Record<string, string> = { amp: "&", lt: "<", gt: ">", quot: '"', "#39": "'", nbsp: " " };
+const ENTITIES: Record<string, string> = { amp: "&", lt: "<", gt: ">", quot: '"', "#39": "'", nbsp: " ", ndash: "\u2013", mdash: "\u2014" };
 function text(html: string) {
   return html
     // Some definitions carry their template's CSS inline ("house", "water"): drop it with its tags.
     .replace(/<(style|script)\b[^>]*>[\s\S]*?<\/\1>/gi, "")
     .replace(/<[^>]+>/g, "")
-    .replace(/&(amp|lt|gt|quot|#39|nbsp);/g, (_m, e: string) => ENTITIES[e])
+    .replace(/&(amp|lt|gt|quot|#39|nbsp|ndash|mdash);/g, (_m, e: string) => ENTITIES[e])
     .replace(/&#(\d+);/g, (_m, n: string) => String.fromCharCode(Number(n)))
+    // No long dashes in your notes: "1990 to 2000", and a comma where a dash joined two phrases.
+    .replace(/(\d)\u2013(\d)/g, "$1 to $2")
+    .replace(/\s*[\u2013\u2014]\s*/g, ", ")
     .replace(/\s+/g, " ")
     .trim();
 }

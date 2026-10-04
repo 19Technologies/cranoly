@@ -44,6 +44,8 @@ export interface Workspace {
   history: string[];
   historyIndex: number;
   mode: ViewMode;
+  /** Editing shows every symbol, as typed (source mode), instead of the live preview. */
+  source: boolean;
   leftOpen: boolean;
   rightOpen: boolean;
   expanded: string[];
@@ -115,6 +117,7 @@ export function emptyState(native = "en"): VaultState {
       history: [],
       historyIndex: -1,
       mode: "edit",
+      source: false,
       leftOpen: true,
       rightOpen: false,
       expanded: [],
