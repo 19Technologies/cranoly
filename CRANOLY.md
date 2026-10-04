@@ -19,11 +19,11 @@ Cranoly feels like a paper notebook with stickers on it: warm cream pages, black
 | Paper 2 | `#f4eee3` | `--background-secondary`, `--paper-2` | Sidebar and panels, switch and progress tracks, desktop dialogs, the phone edit toolbar |
 | Card | `#ffffff` | `--card` | Buttons, cards, menus, fields, the flashcard's question side |
 | Ink | `#16141a` | `--text-normal`, `--edge`, `--pop-color` | Text, outlines and hard shadows. Also `--accent`: the toast and the selection bar |
-| Orange | `#ff5b3a` | `--brand` | **The main action and "where you are":** primary buttons, the active tab's pill, switches when on, the progress bar, the streak flame, the open note on the Map. Ink text on top (`--brand-ink`) |
+| Orange | `#ff5b3a` | `--brand` | **The main action and "where you are":** primary buttons, the active tab's pill, switches when on, the progress bar, the streak flame. Ink text on top (`--brand-ink`) |
 | Orange hover | `#ff6f52` | `--brand-hover` | Primary buttons on hover |
 | Orange soft | `#ffe1d8` | `--brand-soft` | Focus ring on fields, pressed rows in phone sheets and toolbars |
-| Sun | `#ffd84d` | `--sun` | **What's chosen and what you're learning:** the flashcard's answer side, the Practice card on Home, the selected note, chosen language and folder pills, chosen chips and language tiles, the phone ＋ button, the selection bar's hover |
-| Sky | `#cfe3ff` | `--sky` | Word of the day, tags |
+| Sun | `#ffd84d` | `--sun` | **What's chosen and what you're learning:** the flashcard's answer side, the selected note, chosen language and folder pills, chosen chips and language tiles, the phone ＋ button, the selection bar's hover |
+| Sky | `#cfe3ff` | `--sky` | Word of the day (Dictionary), tags |
 | Lilac | `#e4dbff` | `--lilac` | Tags (the default tag colour) |
 | Peach | `#ffe1d8` | `--peach` | Tags, warm tints |
 | Link mark | `#c5e8b2` | `--link-mark` | **Links only:** the highlighter stroke under linked words. Hover: `#b3dd9d` (`--link-mark-hover`). Link text stays ink |
@@ -56,18 +56,22 @@ Cranoly feels like a paper notebook with stickers on it: warm cream pages, black
 
 Orange, Sun, Sky, Lilac and Peach are the same in both themes. Text on them is always ink (`--tint-ink`, `#16141a`), even in Graphite.
 
-### Map and heatmap
+### Mind Map and heatmap
+
+The Mind Map is a night sky: small, saturated dots, one colour per top-level folder, on deep space in Graphite and a pale twilight wash in Paper. No glow, halos or twinkling: the feel comes from the sky and the colour.
 
 | Use | Paper | Graphite | Token |
 |-----|-------|----------|-------|
-| Note | `#4b4752` | `#9a9aa2` | `--graph-node` |
-| Open note | `#ff5b3a` | `#ff5b3a` | `--graph-node-focused` |
-| Tag | `#a996f0` | `#8e7fd1` | `--graph-node-tag` |
-| Not written yet | `#c9c1b4` | `#4d4d54` | `--graph-node-unresolved` |
-| Link line | `#d6cec1` | `#3d3d44` | `--graph-line` |
+| Notes at the top level | `#4055dd` | `#94a5f9` | `--mm-0` |
+| Folders, in order (violet, amber, sky, pink, teal, coral, indigo, cyan) | `#7e40e7` `#e58c06` `#0b8ecb` `#e2288b` `#109e8b` `#e83d30` `#4949df` `#0aa1b8` | `#a677f8` `#fac038` `#45bff7` `#f66fb7` `#23e7cc` `#f76e64` `#7b7bf4` `#25d8f4` | `--mm-1` … `--mm-8` |
+| Tag | `#b739d0` | `#e088f2` | `--mm-tag` |
+| Not written yet | `#abafc4` | `#5b648f` | `--mm-ghost` |
+| Open or hovered note | `#1d1a17` | `#ffffff` | `--mm-focus` |
+| Link line | `rgba(60,50,120,.14)` | `rgba(170,180,255,.16)` | `--mm-line` (hovered links turn link green) |
+| Sky | lavender into cream, faint peach and lavender clouds, a few grey specks | indigo into near black, violet and teal nebula washes, two scattered star tiles | `--mm-sky` (`--mm-panel` for the small map in the side panel, without stars) |
 | Practice heatmap | `#ebe4d8` `#ffd2c6` `#ffab95` `#ff8467` `#ff5b3a` | `#2a2a30`, then orange at 30 / 50 / 75 / 100% | `--heat-0` … `--heat-4` |
 
-The Map is due a redesign; until then, these are its colours.
+Dots are 1.6px across plus 0.7px for every square root of a note's links (the open note is 1.6 times bigger); the tap area stays 6px wider than the dot. Labels are 10.5px at 70% and appear when you zoom in or hover.
 
 ## Typography
 
@@ -81,7 +85,7 @@ The Map is due a redesign; until then, these are its colours.
 
 ### Instrument Sans · `--font-text`
 - **Used for:** everything that isn't a heading: UI, note text, buttons and labels
-- **Size:** 14.5px for UI; 16px for note text (`--font-text-size`); 12–13px for small text (`--font-ui-smaller`, `--font-ui-small`)
+- **Size:** 14.5px for UI; 16px for note text (`--font-text-size`); 12 to 13px for small text (`--font-ui-smaller`, `--font-ui-small`)
 - **Weights:** 500 (fields), 550 (sidebar rows), 600 (chips, toasts), 650 (buttons, segmented items, tab labels, the selection bar), 700 (labels, the chosen sidebar row, language pills), 750 (Flashcard and Link in the selection bar)
 - **Labels:** section labels are 13px 700 uppercase with +0.06em tracking, in muted ink. The flashcard's kind label is 12px 700 uppercase with +0.08em
 - **Numbers that change** (counts, streaks, timers) use tabular figures (`font-variant-numeric: tabular-nums`), so digits don't jitter
@@ -94,22 +98,23 @@ The Map is due a redesign; until then, these are its colours.
 | Role | Family | Weight | Size | Line Height | Letter Spacing | Where |
 |------|--------|--------|------|-------------|----------------|-------|
 | note title | Fraunces | 750 | 42px | 1 | -0.03em | `.inline-title` |
-| greeting | Fraunces | 800 | 34–48px (`clamp(34px, 9vw, 48px)`) | 1 | -0.04em | Home |
-| welcome title | Fraunces | 800 | 30–40px (`clamp(30px, 8vw, 40px)`) | 1.02 | -0.04em | `.wc-title` |
-| flashcard word | Fraunces | 800 | 34–48px (`clamp(34px, 5vw, 48px)`) | 1 | -0.04em | short answers on the card |
-| card title | Fraunces | 800 | 26px |  | -0.03em | the Practice card |
-| word of the day | Fraunces | 700 | 24px |  | -0.03em | Home |
+| welcome title | Fraunces | 800 | 30 to 40px (`clamp(30px, 8vw, 40px)`) | 1.02 | -0.04em | `.wc-title` |
+| flashcard word | Fraunces | 800 | 34 to 48px (`clamp(34px, 5vw, 48px)`) | 1 | -0.04em | short answers on the card |
+| word of the day | Fraunces | 700 | 24px |  | -0.03em | the Dictionary |
+| dictionary word | Fraunces | 700 | 17px |  | -0.01em | Dictionary rows; the article (der, la…) in faint 600 |
+| letter | Fraunces | 800 | 20px |  | -0.02em | the Dictionary's sticky A to Z headers |
+| Mind Map title | Fraunces | 800 | 26px |  | -0.03em | over the sky, top left |
 | language name | Fraunces | 700 | 19px |  | -0.02em | welcome tiles |
 | practice bar | Fraunces | 750 | 18px |  | -0.02em | the deck name while practising |
 | note text | Instrument Sans | 400 | 16px |  | 0 | the editor |
 | ui | Instrument Sans | 500 | 14.5px |  | 0 | everywhere else |
 | button | Instrument Sans | 650 | 14px (large 16px) | 1 | 0 | `.btn` |
-| label | Instrument Sans | 700 | 13px | 1 | +0.06em, uppercase | Home section labels |
-| small | Instrument Sans | 500 | 12–13px |  | 0 | metadata, hints |
+| label | Instrument Sans | 700 | 12 to 13px | 1 | +0.06em, uppercase | Word of the day, Properties |
+| small | Instrument Sans | 500 | 12 to 13px |  | 0 | metadata, hints |
 
 ## Spacing and shapes
 
-**Spacing:** no fixed scale; gaps and padding step through 6, 8, 10, 12, 14, 16, 18 and 22px · **Density:** comfortable in lists, roomy on Home and in the welcome
+**Spacing:** no fixed scale; gaps and padding step through 6, 8, 10, 12, 14, 16, 18 and 22px · **Density:** comfortable in lists, roomy in the welcome
 
 ### Border Radius
 
@@ -118,8 +123,9 @@ The Map is due a redesign; until then, these are its colours.
 | buttons, chips, switches, search, toasts, the selection bar, the phone tab bar, round icon buttons, language and folder pills | 999px (pill) |
 | flashcards in practice | 28px |
 | phone sheets | 30px top corners |
-| the Practice card on Home, the welcome flashcard | 24px |
-| note cards and the word card on Home, language tiles | 18px |
+| the welcome flashcard | 24px |
+| the word of the day card, language tiles | 18px |
+| the Properties card, callouts | 16px |
 | menus, the segmented track | 16px |
 | rows in phone sheets | 14px |
 | notes-list rows, segmented items, selects, desktop dialogs | 12px |
@@ -131,13 +137,13 @@ The Map is due a redesign; until then, these are its colours.
 
 | Use | Value |
 |-----|-------|
-| Things you press and cards that pop: buttons, Home cards, language tiles, flashcards, menus, the tab bar, toasts, the selection bar, the ＋ button | `2px solid var(--edge)` |
+| Things you press and cards that pop: buttons, the word of the day card, language tiles, flashcards, menus, the tab bar, toasts, the selection bar, the ＋ button | `2px solid var(--edge)` |
 | Small controls: switch track and knob, tags, the progress bar, chosen pills and chips | `1.5px solid var(--edge)` |
 | Resting chips, search, fields and unchosen pills | `1.5px solid var(--background-modifier-border-hover)`, turning ink on hover or focus |
 | Row dividers, the phone edit toolbar's top edge | `1px solid var(--background-modifier-border)` |
 | Focus on fields and search | ink outline plus a `0 0 0 3px var(--brand-soft)` ring |
-| Small pop | `0 3px 0 var(--pop-color)` (`--pop-sm`): primary buttons, toasts, the selection bar, Home note cards, language tiles, the ＋ button |
-| Pop | `0 4px 0 var(--pop-color)` (`--pop`): the tab bar, the Practice card, primary buttons on hover |
+| Small pop | `0 3px 0 var(--pop-color)` (`--pop-sm`): primary buttons, toasts, the selection bar, language tiles, the ＋ button |
+| Pop | `0 4px 0 var(--pop-color)` (`--pop`): the tab bar, primary buttons on hover |
 | Large pop | `5px 5px 0 var(--pop-color)` (`--pop-lg`): menus, the command palette, hover previews |
 | Flashcard | `6px 6px 0 var(--pop-color)` on the face you can see |
 | Soft shadows | Only two: the segmented control's chosen item (`0 1px 0` plus an 8px blur) and desktop dialogs (`--shadow-l`) |
@@ -146,9 +152,10 @@ Shadows are hard: no blur, offset straight down or down-right, in pure ink, so p
 
 ### Layout
 
-- **App:** Apple Notes layout. Sidebar (236px), notes list (320px), then the note, with the text column capped at 700px, plus an optional side panel (300px). On phones (820px and narrower) it shows one screen at a time, with a floating Home · Notes · ＋ · Practice · Search tab bar.
-- **Home:** one column up to 640px, 18px gaps.
-- **Card padding:** 14–22px · **Element gap:** 6–12px · **Phone gutter:** 16px
+- **App:** Apple Notes layout. Sidebar (236px), notes list (320px), then the note, with the text column capped at 700px, plus an optional side panel (300px). On phones (820px and narrower) it opens on the Notes screen and shows one screen at a time, with a floating Notes · ＋ · Search tab bar; the ☰ button on Notes slides in the sidebar as a drawer.
+- **Sidebar order:** Folders first (All Notes, then your folders), a hairline, then Mind Map, Practice, Dictionary, Search, Add a word and Scan text. Learn the basics and Settings sit at the foot.
+- **Dictionary:** the narrow page column; sticky letter headers, hairline rows.
+- **Card padding:** 14 to 22px · **Element gap:** 6 to 12px · **Phone gutter:** 16px
 
 ## Components
 
@@ -168,7 +175,7 @@ Ghost: no fill or outline; hover is the 6% ink wash; when on, it gets a white fi
 ### Round Icon Button
 **Role:** compact tools: ＋, ⚙, ⋯, close, speaker
 
-Round (999px): 44–48px on Home, 52px around the flashcard, 32px in panel toolbars. Stand-alone ones (Home's ⚙, the speaker) are white with a `1.5px` ink outline. Hover: ＋ and ⚙ **turn 90°**.
+Round (999px): 48px beside the word of the day, 52px around the flashcard, 32px in panel toolbars, 42px on the phone Notes header (☰, ⋯, new note). Stand-alone ones (the speaker) are white with a `1.5px` ink outline. Hover: ＋ and ⚙ **turn 90°**.
 
 ### Chip
 **Role:** quick picks and toggles: starter words in the welcome, Shuffle and Answer first in practice
@@ -176,15 +183,15 @@ Round (999px): 44–48px on Home, 52px around the flashcard, 32px in panel toolb
 36px pill, white fill, `1.5px #d6cec1` outline that turns ink on hover, 600 at 14px. On: Sun fill with an ink outline, and the chip **pops**.
 
 ### Language and Folder Pills
-**Role:** switching language on Home and folders on the phone notes list
+**Role:** switching language on Practice and the Dictionary (`.lang-switch`), and folders on the phone notes list
 
-32–34px pills, 650–700 at 13.5–14px, muted text, `1.5px #d6cec1` outline. The chosen one sits on a **Sun pill with an ink outline that slides** from the previous choice.
+32 to 34px pills, 650 to 700 at 13.5 to 14px, muted text, `1.5px #d6cec1` outline. The chosen one sits on a **Sun pill with an ink outline that slides** from the previous choice.
 
 ### Tag
 Lilac by default (or Sun, Sky, Peach), `1.5px` ink outline, 8px radius, 700 at 0.8em. Clickable tags lift 1px onto `0 2px 0` on hover.
 
 ### Segmented Control
-**Role:** one choice out of 2–4: theme (Paper · Graphite · System), side-panel tabs
+**Role:** one choice out of two to four: theme (Paper · Graphite · System), side-panel tabs
 
 A track in the 6% ink wash with a 16px radius and 4px padding (side-panel tabs: 12px, 3px). Items are 650, muted, with a 12px radius. The chosen item is a **white card with a soft shadow that slides** to the new choice; its label turns ink as the card arrives.
 
@@ -204,16 +211,27 @@ Ink text with a mint highlighter stroke over its lower 42% (`linear-gradient(tra
 ### Note Row
 **Role:** an item in the notes list
 
-12px radius, 9–10px padding, a hairline between rows (hidden next to the selected row). Title 700, then the preview in muted ink and the date and counts in faint 12px. The selected row sits on a **Sun highlight that glides** from the previous row instead of jumping.
+12px radius, 9 to 10px padding, a hairline between rows (hidden next to the selected row). Title 700, then the preview in muted ink and the date and counts in faint 12px. The selected row sits on a **Sun highlight that glides** from the previous row instead of jumping.
 
 ### Sidebar Row
 34px tall, 10px radius, 550 at 14.5px with a muted icon and a faint count. Selected: 700 weight on a 10% ink wash that **glides** between rows.
 
-### Home Cards
-- **Practice card:** Sun, `2px` ink outline, 24px radius, `0 4px 0`, 22px padding; title in Fraunces 800 at 26px; a primary Start button.
-- **Word of the day:** Sky, `2px` ink outline, 18px radius, the word in Fraunces at 24px; a round speaker button beside it.
-- **Note cards:** white, `2px` ink outline, 18px radius, `0 3px 0`.
-- Section labels are 13px uppercase muted; the streak line has an orange flame.
+### Read / Edit Button
+**Role:** switching a note between reading and editing. It names where it takes you: **Edit** while reading, **Read** while editing (⌘E).
+
+Laptop: the first thing in the note toolbar, a 32px secondary pill with an icon (pencil or open book) and the word at 13px. Phone: the ink pill at the top right of the note, text only. The new word **springs in** from below when it changes. In source mode a Sun "Source" chip sits beside it; tapping the chip returns to the live preview.
+
+### Properties Card
+**Role:** a note's properties (the `---` block at the top), drawn as a small table in reading view and live preview
+
+White card, `1.5px` resting outline, 16px radius, 12px 16px padding. A 12px uppercase muted "Properties" label, then rows split by hairlines: the key muted in the left 30%, the value in ink. Tags are tag chips, lists are small Paper 2 chips, dates read in words, an empty value reads "Empty" in faint ink. Tapping it in the editor shows the YAML as typed, in the code font with keys in 650 ink.
+
+### Card Arrow
+The arrow on a flashcard line (→, or ⇄ both ways) is quiet: a small chip in a dull neutral grey (`--sep-bg` `#e9e7e3`, Graphite `#303036`) with grey text (`--sep-ink`) and a `1.5px` hairline. In the editor it's grey text. Never Sun or orange.
+
+### Dictionary
+- **Word of the day:** Sky, `2px` ink outline, 18px radius, the word in Fraunces at 24px, its meaning hidden until tapped; a round speaker button beside it.
+- **Rows:** the word in Fraunces 17px (its article faint), the meaning muted below, a speaker at the end; hairline dividers; filed under sticky letter headers by the word, not its article.
 
 ### Language Tile
 **Role:** picking languages in the welcome
@@ -223,7 +241,7 @@ White card, `2px` ink outline, 18px radius, `0 3px 0`. Language name in Fraunces
 ### Flashcard
 **Role:** Cranoly's signature object
 
-Question side white, answer side Sun (ink text). `2px` ink outline, 28px radius in practice (24px in the welcome), and a `6px 6px 0` hard shadow on the face you can see. Short answers are Fraunces 800 at 34–48px. Cloze gaps are dashed ink boxes on Paper 2. A large “Reveal answer” button sits between 52px round previous and next buttons. It **flips** on the glide spring.
+Question side white, answer side Sun (ink text). `2px` ink outline, 28px radius in practice (24px in the welcome), and a `6px 6px 0` hard shadow on the face you can see. Short answers are Fraunces 800 at 34 to 48px. Cloze gaps are dashed ink boxes on Paper 2. A large “Reveal answer” button sits between 52px round previous and next buttons. It **flips** on the glide spring.
 
 ### Progress Bar
 10px pill in Paper 2 with a `1.5px` ink outline. The fill is orange with an ink right edge.
@@ -250,7 +268,7 @@ Phones: Paper, a `2px` ink top edge, 30px top corners, an ink grab handle; rows 
 Ink pill (white in Graphite), `2px` ink outline, `0 3px 0`, 600. The action is Sun-coloured text (dark orange `#b54708` in Graphite). It **springs up** from the bottom.
 
 ### Phone Tab Bar
-**Role:** Home · Notes · ＋ · Practice · Search
+**Role:** Notes · ＋ · Search (everything else is in the ☰ drawer on the Notes screen)
 
 A white pill bar, 66px tall and up to 420px wide, with a `2px` ink outline and `0 4px 0`, floating 12px above the bottom edge. Tab labels are 11px 650 and muted. The active tab's icon sits on an **orange pill that slides** between tabs, and the icon **pops**. The centre ＋ is a 54px Sun circle with a `2px` ink outline and `0 3px 0`; it drops 2px and **turns 90°** when pressed.
 
@@ -310,12 +328,13 @@ Browsers without `linear()` (before Chrome 113 or Safari 17.2) get the nearest `
 | Label under a moving pill | text colour | fade · color, 60ms delay | Swaps as the pill arrives under it |
 | **Notes list** selection changed | the Sun highlight's top and bottom edges | glide · glide | The same stretch; long jumps snap. When an edit moves the open note up the list, the highlight travels with it |
 | **Sidebar** selection changed | the grey highlight | glide · glide | The same stretch |
-| **Home languages, phone folder pills** changed | the Sun pill | glide · glide | The same stretch |
+| **Language pills, phone folder pills** changed | the Sun pill | glide · glide | The same stretch |
+| **Read / Edit** button | the new word rises 55% and fades in | pop · elastic | The same spring in the tour's demo |
 | **Tab bar** changed | the orange pill slides under the new icon; the icon pops from `scale: .7` | glide · glide; pop · bounce | A light haptic tap in the Android app |
 | **Chip** turned on | Sun fill; the chip pops from `scale: .92` | color · color; pop · bounce |  |
 | **Language tile** picked | Sun fill; the corner check pops in from `scale: 0` and `rotate: -25deg` | color · color; pop · bounce |  |
 | **Primary button** hover (pointer devices) | label tumbles: the front face goes to `rotate: 1 0 0 85deg`, `translate: 0 -0.95em -1.5em` and fades; the back face (CSS text only) springs in from `rotate: 1 0 0 -90deg`, `translate: 0 0.95em -1.5em` | medium (travel) and default (turn) · elastic; fade 150ms out, 75ms in | Slush's button, applied to the label inside a clipped pill with 500px perspective. On Start, Add a word, Get started, Continue, Download, Add word, Save, New note and Start using Cranoly |
-| **Round button** hover | ＋ and ⚙ `rotate: 90deg` | press · elastic | The phone ＋ and Home's ⚙ also turn when pressed |
+| **Round button** hover | ＋ and ⚙ `rotate: 90deg` | press · elastic | The phone ＋ also turns when pressed |
 | Logo hover | `rotate: 360deg` | long · elastic |  |
 | Arrow in a button or row, hover | `translate: 3px 0` | press · elastic |  |
 | **Theme** switched | the theme icon spins in from `rotate: -120deg`, `scale: .6` | default · elastic | Colours change over color · color |
@@ -341,14 +360,14 @@ With `prefers-reduced-motion: reduce`, every animation and transition drops to 0
 
 | Moment | Haptic |
 |--------|--------|
-| Switch toggled; theme, Home language, tab or folder changed; flashcard flipped; a language picked in the welcome | light tap |
+| Switch toggled; theme, language, tab or folder changed; flashcard flipped; a language picked in the welcome | light tap |
 | A card saved (Add word, the word sheet, new words, scan), a deck finished, the first word added in the welcome | success |
 
 ### Recipes
 
 ```css
 /* Press: everything pressable squishes and springs back (the full list is in globals.css → Motion). */
-:is(.btn, .chip, .icon-btn, .tool, .seg button, .home-note, .wc-lang) {
+:is(.btn, .chip, .icon-btn, .tool, .seg button, .dict-row, .wc-lang) {
   transition:
     scale var(--dur-press) var(--ease-elastic),
     transform 0.12s var(--ease),
@@ -357,7 +376,7 @@ With `prefers-reduced-motion: reduce`, every animation and transition drops to 0
     color var(--dur-color) var(--ease-color),
     border-color var(--dur-color) var(--ease-color);
 }
-:is(.btn, .chip, .icon-btn, .tool, .seg button, .home-note, .wc-lang):active:not(:disabled) { scale: 0.955; }
+:is(.btn, .chip, .icon-btn, .tool, .seg button, .dict-row, .wc-lang):active:not(:disabled) { scale: 0.955; }
 :is(.sb-item, .nl-row, .sheet-item, .deck-row):active:not(:disabled) { scale: 0.985; }
 
 /* Switch: the knob springs across and stretches while held. */
@@ -413,7 +432,7 @@ Main buttons get the tumbling label with `<Tumble label="Start">…</Tumble>` (s
 
 ### Do
 - Keep **orange for the main action** and for "where you are" (the active tab, switches that are on, progress).
-- Use **Sun for what's chosen or being learned**: the answer side, the selected note, chosen pills and chips, the Practice card.
+- Use **Sun for what's chosen or being learned**: the answer side, the selected note, chosen pills and chips.
 - Keep **green for links only** and **blue for selected text only**.
 - Outline what you press in `2px` ink and give it a hard pop shadow; small controls get `1.5px`.
 - Make every control a pill.
@@ -424,7 +443,7 @@ Main buttons get the tumbling label with `<Tumble label="Start">…</Tumble>` (s
 ### Don't
 - Don't switch to Slush's look: no hairline-only outlines, no shadowless buttons, no new palette or type scale. Borrow its motion only.
 - Don't use blurred shadows on cards or buttons. Shadows are hard and ink-coloured; the two soft exceptions are listed above.
-- Don't use gradients as colour. The link highlighter's hard stop reads as a flat stroke, and it's the only gradient.
+- Don't use gradients as colour. The two exceptions: the link highlighter (its hard stop reads as a flat stroke) and the Mind Map's sky.
 - Don't use glowing or pulsing dots anywhere. Markers are solid rules or pills.
 - Don't put anything but ink text on Sun, Sky, Lilac or Peach, in either theme.
 - Don't fade between selected items. The indicator must travel. In React, use `useSlider` and a `.slider-pill` in the container instead of styling the chosen item's own background.
@@ -440,7 +459,7 @@ Main buttons get the tumbling label with `<Tumble label="Start">…</Tumble>` (s
 | 1 | Paper | `#fbf7f0` | App canvas, notes, phone sheets |
 | 2 | Paper 2 | `#f4eee3` | Sidebar, panels, tracks, desktop dialogs |
 | 3 | Card | `#ffffff` | Buttons, cards, menus, fields, the flashcard's question side |
-| 4 | Tints | Sun / Sky / Lilac / Peach | Chosen things, the Practice card, word of the day, tags, the flashcard's answer side |
+| 4 | Tints | Sun / Sky / Lilac / Peach | Chosen things, word of the day, tags, the flashcard's answer side |
 | 5 | Ink | `#16141a` | Toasts and the selection bar: the inverted layer |
 
 ## Imagery
@@ -468,11 +487,11 @@ Example Component Prompts:
 
 4. **Flashcard:** "A 28px-radius white card with a 2px #16141a outline and a hard 6px 6px 0 #16141a shadow. The word is Fraunces 800 at 44px, line height 1, -0.04em, centred. Tapping flips it 180° on the Y axis over 850ms with `--ease-glide` to a #ffd84d answer side."
 
-5. **Home Practice card:** "A #ffd84d card with a 2px #16141a outline, a 24px radius and a hard 0 4px 0 shadow. 'Practise now' in Fraunces 800 at 26px, a 600-weight line '10 cards · about 3 min' at 80% opacity, and an orange primary 'Start' button whose label tumbles on hover."
+5. **Mind Map:** "A full-bleed night sky: a radial gradient from #13122b to #05050c with faint violet and teal nebula washes and scattered 1px stars. Notes are flat dots about 2 to 4px across in saturated colours (one per folder: #a677f8, #fac038, #45bff7, #f66fb7), joined by 0.7px lines in rgba(170,180,255,.16). No glow. The title 'Mind Map' in Fraunces 800 at 26px, top left, in #f1f0ff."
 
 ## Gradient System
 
-None, except the link highlighter: a hard-stop gradient that draws a flat mint stroke under linked words. Every surface is a flat fill. Depth comes from ink outlines, hard shadows and motion.
+None, except two: the link highlighter (a hard-stop gradient that draws a flat mint stroke under linked words) and the Mind Map's sky. Every other surface is a flat fill. Depth comes from ink outlines, hard shadows and motion.
 
 ## Quick Start
 
@@ -579,4 +598,3 @@ Fraunces runs with `font-variation-settings: "SOFT" 100, "WONK" 0` on `body`.
 - **Tutora:** Cranoly's original brand, and the source of its look: warm paper, ink outlines, hard pop shadows, orange, and pastel chips.
 - **Slush (slush.app):** the source of the motion only: the spring curves, sliding selections, the press squish and the tumbling labels.
 - **Apple Notes:** the app layout: folders, a date-grouped list and a calm editor.
-- **Obsidian:** the editor's foundation and the Graphite theme.
