@@ -5794,7 +5794,7 @@ a.smart-deck:hover {
   background: var(--brand);
   transition: width 0.4s var(--ease);
 }
-.wc-back {
+.wc-prev {
   display: inline-flex;
   align-items: center;
   gap: 2px;
@@ -5804,10 +5804,10 @@ a.smart-deck:hover {
   color: var(--text-normal);
   border-radius: 999px;
 }
-.wc-back > svg {
+.wc-prev > svg {
   transition: translate 0.2s var(--ease-elastic, ease);
 }
-.wc-back:active > svg {
+.wc-prev:active > svg {
   translate: -3px 0;
 }
 .wc-skip {

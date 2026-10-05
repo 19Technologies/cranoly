@@ -376,7 +376,7 @@ function Flow() {
             </span>
           ) : (
             <>
-              <button className="wc-back" onClick={back} aria-label="Back">
+              <button className="wc-prev" onClick={back} aria-label="Back">
                 <ChevronLeft size={19} strokeWidth={2.3} /> Back
               </button>
               <Progress step={step} />
