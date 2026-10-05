@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { languageOf } from "@/lib/languages";
 import { say } from "@/lib/smart";
+import { prepareSpeech, useVoiceWarmup } from "@/lib/voices";
 import { haptic } from "@/lib/native";
 import MarkdownView from "@/components/MarkdownView";
 import { Card, inDeck } from "@/lib/cards";
@@ -56,6 +57,19 @@ function Session({ cards: initial, title, shuffle, startWithBack, limit }: {
   const card = order[index];
   const front = reversed ? card?.back : card?.front;
   const back = reversed ? card?.front : card?.back;
+
+  // Hearing a card should be instant: the voice loads with the session, and this card and the next
+  // are prepared before you tap them.
+  useVoiceWarmup(card ? cardLanguage(card, notes, settings) : null, settings.native);
+  useEffect(() => {
+    for (const c of [order[index], order[index + 1]]) {
+      if (!c) continue;
+      const learn = cardLanguage(c, notes, settings);
+      const mine = c.kind === "cloze" ? learn : settings.native;
+      prepareSpeech([reversed ? c.back : c.front], reversed ? mine : learn);
+      prepareSpeech([reversed ? c.front : c.back], reversed ? learn : mine);
+    }
+  }, [order, index, reversed, notes, settings]);
 
   const flip = useCallback(() => {
     if (!card) return;
@@ -234,7 +248,13 @@ function Session({ cards: initial, title, shuffle, startWithBack, limit }: {
           >
             <div className="face face-front">
               <span className="face-kind">{reversed ? "Reversed" : KIND_LABEL[card.kind]}</span>
-              <button className="face-say" onClick={() => say(front, frontLang)} aria-label="Hear the question" title="Hear it">
+              <button
+                className="face-say"
+                onPointerDown={() => prepareSpeech([front], frontLang.code, "now")}
+                onClick={() => say(front, frontLang)}
+                aria-label="Hear the question"
+                title="Hear it"
+              >
                 <Volume2 size={16} />
               </button>
               <div className={`face-content${short(front) ? " is-short" : ""}`}>
@@ -247,7 +267,13 @@ function Session({ cards: initial, title, shuffle, startWithBack, limit }: {
             </div>
             <div className="face face-back">
               <span className="face-kind">Answer</span>
-              <button className="face-say" onClick={() => say(back, backLang)} aria-label="Hear the answer" title="Hear it">
+              <button
+                className="face-say"
+                onPointerDown={() => prepareSpeech([back], backLang.code, "now")}
+                onClick={() => say(back, backLang)}
+                aria-label="Hear the answer"
+                title="Hear it"
+              >
                 <Volume2 size={16} />
               </button>
               {card.kind !== "cloze" && (

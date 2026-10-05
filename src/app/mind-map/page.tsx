@@ -1,14 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown, Search, Settings2, X } from "lucide-react";
 import GraphCanvas from "@/components/GraphCanvas";
 import { buildGraph } from "@/lib/graph";
-import { indexOf, useVault, vault } from "@/lib/store";
+import { getVault, indexOf, useVault, vault } from "@/lib/store";
+import { applyTheme } from "@/lib/theme";
 import { openSearch } from "@/lib/ui";
 
-/** The Mind Map: every note as a dot, every link as a line, drawn like stars in a night sky. */
+/** The Mind Map: every note as a dot, every link as a line, on a flat dark background (dark in both themes). */
 export default function MindMapPage() {
   const { notes, settings, workspace } = useVault();
   const router = useRouter();
@@ -28,9 +29,15 @@ export default function MindMapPage() {
     return { notes: noteNodes, links: data.links.filter((l) => l.kind === "link").length, tags: index.tags.size };
   }, [data, index]);
 
+  // The browser's top bar matches the dark map, then goes back to the theme's colour.
+  useEffect(() => {
+    document.querySelectorAll('meta[name="theme-color"]').forEach((m) => m.setAttribute("content", "#141417"));
+    return () => void applyTheme(getVault().settings.theme);
+  }, []);
+
   return (
-    <div className="graph-page">
-      <h1 className="mm-title">Mind Map</h1>
+    <div className="graph-page" data-theme="graphite">
+      <h1 className="sr-only">Mind Map</h1>
       <GraphCanvas
         data={data}
         activeId={workspace.active}

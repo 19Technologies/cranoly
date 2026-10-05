@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BookA, FileText, Plus, Search, Volume2, X } from "lucide-react";
 import LanguageSwitch from "@/components/LanguageSwitch";
@@ -12,6 +12,7 @@ import { say } from "@/lib/smart";
 import { useCards, useVault, vault } from "@/lib/store";
 import { setUI } from "@/lib/ui";
 import { useToday } from "@/lib/useToday";
+import { prepareSpeech, useVoiceWarmup, useVoices } from "@/lib/voices";
 import { titleOf } from "@/lib/vault";
 
 const hash = (s: string) => [...s].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
@@ -51,6 +52,30 @@ export default function DictionaryPage() {
   }, [shown]);
   const daily = today && entries.length > 2 ? entries[hash(today) % entries.length] : null;
 
+  // Hearing a word should be instant: the voice loads as the page opens, and the words on screen
+  // (and the word of the day) are prepared before you tap them.
+  useVoiceWarmup(lang.code);
+  const voices = useVoices();
+  const list = useRef<HTMLDivElement>(null);
+  const ready = voices[lang.code]?.status === "ready";
+  useEffect(() => {
+    if (!ready) return;
+    if (daily) prepareSpeech([daily.word], lang.code);
+    const root = list.current;
+    if (!root) return;
+    const watch = new IntersectionObserver(
+      (items) => {
+        const words = items.filter((i) => i.isIntersecting).map((i) => (i.target as HTMLElement).dataset.word);
+        items.filter((i) => i.isIntersecting).forEach((i) => watch.unobserve(i.target));
+        prepareSpeech(words, lang.code);
+      },
+      { rootMargin: "120px 0px" },
+    );
+    root.querySelectorAll("[data-word]").forEach((el) => watch.observe(el));
+    return () => watch.disconnect();
+  }, [ready, lang.code, shown, daily]);
+  const press = (word: string) => () => prepareSpeech([word], lang.code, "now");
+
   const add = () => setUI({ addWord: { noteId: null, mode: "word" } });
   const openNote = (source: Entry["sources"][number]) => {
     setOpen(null);
@@ -63,9 +88,7 @@ export default function DictionaryPage() {
   return (
     <div className="page page-narrow dict-page">
       <header className="page-header">
-        <p className="eyebrow">
-          <span className="dot" /> Your words
-        </p>
+        <p className="eyebrow">Your words</p>
         <div className="dict-title">
           <h1>Dictionary</h1>
           <button className="btn btn-primary" onClick={add}>
@@ -107,7 +130,7 @@ export default function DictionaryPage() {
                   </b>
                   <span>{revealed ? daily.meanings.join(", ") : "Tap to see the meaning"}</span>
                 </button>
-                <button className="icon-btn" onClick={() => say(daily.word, lang)} aria-label={`Hear ${daily.word}`}>
+                <button className="icon-btn" onPointerDown={press(daily.word)} onClick={() => say(daily.word, lang)} aria-label={`Hear ${daily.word}`}>
                   <Volume2 size={19} />
                 </button>
               </div>
@@ -131,26 +154,28 @@ export default function DictionaryPage() {
 
           {!shown.length && <p className="dict-none">No word or meaning matches “{query}”.</p>}
 
-          {groups.map((g) => (
-            <section key={g.letter} className="dict-group" aria-label={g.letter}>
-              <h2 className="dict-letter">{g.letter}</h2>
-              <ul>
-                {g.entries.map((e) => (
-                  <li key={e.word} className="dict-entry">
-                    <button className="dict-row" onClick={() => setOpen(e)}>
-                      <b className="dict-word">
-                        <Word entry={e} />
-                      </b>
-                      <span className="dict-meaning">{e.meanings.join(", ")}</span>
-                    </button>
-                    <button className="icon-btn dict-say" onClick={() => say(e.word, lang)} aria-label={`Hear ${e.word}`}>
-                      <Volume2 size={17} />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ))}
+          <div ref={list} className="dict-list">
+            {groups.map((g) => (
+              <section key={g.letter} className="dict-group" aria-label={g.letter}>
+                <h2 className="dict-letter">{g.letter}</h2>
+                <ul>
+                  {g.entries.map((e) => (
+                    <li key={e.word} className="dict-entry" data-word={e.word}>
+                      <button className="dict-row" onClick={() => setOpen(e)}>
+                        <b className="dict-word">
+                          <Word entry={e} />
+                        </b>
+                        <span className="dict-meaning">{e.meanings.join(", ")}</span>
+                      </button>
+                      <button className="icon-btn dict-say" onPointerDown={press(e.word)} onClick={() => say(e.word, lang)} aria-label={`Hear ${e.word}`}>
+                        <Volume2 size={17} />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ))}
+          </div>
         </>
       )}
 
@@ -163,7 +188,7 @@ export default function DictionaryPage() {
               ))}
             </ul>
             <div className="dict-actions">
-              <button className="btn" onClick={() => say(open.word, lang)}>
+              <button className="btn" onPointerDown={press(open.word)} onClick={() => say(open.word, lang)}>
                 <Volume2 size={15} /> Hear it
               </button>
               <button

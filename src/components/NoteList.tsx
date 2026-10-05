@@ -379,14 +379,20 @@ export default function NoteList({ variant }: { variant: "column" | "page" }) {
             </small>
           )}
         </div>
-        {variant === "page" && (
-          <button className="icon-btn" aria-label="More" onClick={() => setMore(true)}>
-            <MoreHorizontal size={21} />
+        {variant === "page" ? (
+          <div className="nl-actions">
+            <button className="icon-btn" aria-label="More" onClick={() => setMore(true)}>
+              <MoreHorizontal size={21} />
+            </button>
+            <button className="icon-btn nl-compose" aria-label="New note" title="New note" onClick={compose}>
+              <SquarePen size={21} />
+            </button>
+          </div>
+        ) : (
+          <button className="icon-btn nl-compose" aria-label="New note" title="New note" onClick={compose}>
+            <SquarePen size={18} />
           </button>
         )}
-        <button className="icon-btn nl-compose" aria-label="New note" title="New note" onClick={compose}>
-          <SquarePen size={variant === "page" ? 21 : 18} />
-        </button>
       </header>
 
       {(total > 3 || query) && (

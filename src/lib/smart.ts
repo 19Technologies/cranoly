@@ -53,7 +53,9 @@ export function flashcard(view: EditorView) {
 
 /**
  * Say something in the language being learned: with its downloaded natural voice if there is
- * one, else the device's own voice, else offer to download a voice right here in the app.
+ * one, else the device's own voice, else offer to download a voice right here in the app. The
+ * natural voice is instant for words heard or prepared before; while it's still starting, the
+ * device's voice says the word straight away instead of making you wait.
  */
 export function say(text: string, lang = learning()) {
   const words = speakable(text);
@@ -78,7 +80,7 @@ export function say(text: string, lang = learning()) {
   };
   if (!voiceReady(lang.code)) return fallback();
   unlockAudio(); // must happen during the tap
-  speakNatural(words, lang.code).catch(fallback);
+  speakNatural(words, lang.code, () => speak(words, lang.voice)).catch(fallback);
 }
 
 export function hear(view: EditorView) {

@@ -2,12 +2,15 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, BookA, GraduationCap, Moon, MonitorSmartphone, SpellCheck, Sun, Volume2, X } from "lucide-react";
+import {
+  ArrowLeft, ArrowRight, BookA, ChevronLeft, FileJson, FileText, Folder, FolderOpen, GraduationCap, Moon, MonitorSmartphone, SpellCheck, Sun, Volume2, X,
+} from "lucide-react";
 import { LANGUAGES, cardExamples } from "@/lib/languages";
 import { useVault, vault } from "@/lib/store";
-import { setUI, useUI } from "@/lib/ui";
+import { onBack, setUI, useUI } from "@/lib/ui";
 import { useSlider } from "@/lib/useSlider";
 import { haptic } from "@/lib/native";
+import { isoDay } from "@/lib/vault";
 
 /* Small live demos, one per step, drawn with the app's own styles. */
 
@@ -222,11 +225,37 @@ function DemoShortcuts() {
   );
 }
 
+/** The Cranoly folder filling up as you write: each note a file, in its folder, and the backup file. */
+function DemoFolder() {
+  const rows: Array<[ReactNode, string, string]> = [
+    [<Folder key="i" size={15} />, "German", "is-dir"],
+    [<FileText key="i" size={14} />, "Words.md", "is-file"],
+    [<FileText key="i" size={14} />, "Lesson 13.md", "is-file"],
+    [<Folder key="i" size={15} />, "Daily", "is-dir"],
+    [<FileText key="i" size={14} />, `${isoDay(new Date())}.md`, "is-file"],
+    [<FileJson key="i" size={14} />, "Cranoly backup (Phone).json", "is-backup"],
+  ];
+  return (
+    <div className="ob-demo ob-demo-folder" aria-hidden>
+      <span className="ob-tree-root">
+        <FolderOpen size={16} /> Cranoly
+      </span>
+      <ul className="ob-tree">
+        {rows.map(([icon, name, kind], i) => (
+          <li key={name} className={`ob-tree-row ${kind}`} style={{ animationDelay: `${0.25 + i * 0.35}s` }}>
+            {icon} {name}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function DemoTheme() {
   const { settings } = useVault();
   const options = [
-    { id: "paper", label: "Paper", icon: <Sun size={18} /> },
     { id: "graphite", label: "Graphite", icon: <Moon size={18} /> },
+    { id: "paper", label: "Paper", icon: <Sun size={18} /> },
     { id: "system", label: "System", icon: <MonitorSmartphone size={18} /> },
   ] as const;
   const seg = useSlider<HTMLDivElement>(".is-on", settings.theme);
@@ -324,7 +353,7 @@ const STEPS: Step[] = [
   {
     eyebrow: "Step 5 · Connections",
     title: "See how it all fits.",
-    body: "The right sidebar shows which notes link to the one you're reading. The Mind Map draws all your notes, like stars. Tap any dot to open that note.",
+    body: "The right sidebar shows which notes link to the one you're reading. The Mind Map draws all your notes as dots, joined by their links. Tap any dot to open that note.",
     demo: <DemoGraph />,
   },
   {
@@ -343,6 +372,19 @@ const STEPS: Step[] = [
     title: "Move fast.",
     body: "A few shortcuts and gestures get you anywhere in a second.",
     demo: <DemoShortcuts />,
+  },
+  {
+    eyebrow: "Step 8 · Backup and sync",
+    title: "Your notes are safe.",
+    body: (
+      <>
+        Everything you write is also saved in a folder called <b>Cranoly</b>: each note is its own file, in the same folders
+        you see here. On a phone it&apos;s in Documents. On a laptop you choose where; pick Google Drive and it&apos;s online
+        too. To use your notes on another device, share a copy from one and tap <b>Bring in changes</b> on the other. It&apos;s
+        all in Settings › Backup and sync.
+      </>
+    ),
+    demo: <DemoFolder />,
   },
   {
     eyebrow: "Last step",
@@ -370,6 +412,17 @@ function Tour() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  // Android's back button goes one step back; from the first step it closes the tour.
+  useEffect(
+    () =>
+      onBack(() => {
+        if (step > 0) setStep(step - 1);
+        else setUI({ onboarding: false });
+        return true;
+      }),
+    [step],
+  );
+
   const finish = () => {
     close();
     setUI({ pendingRename: vault.createNote() });
@@ -392,9 +445,7 @@ function Tour() {
           </button>
         </div>
         <div className="ob-body" key={step}>
-          <p className="eyebrow">
-            <span className="dot" /> {s.eyebrow}
-          </p>
+          <p className="eyebrow">{s.eyebrow}</p>
           <h1 className="ob-title">{s.title}</h1>
           <p className="ob-text">{s.body}</p>
           {s.demo}
@@ -411,9 +462,15 @@ function Tour() {
             </>
           ) : (
             <>
-              <button className="btn btn-ghost btn-lg" onClick={close}>
-                Skip
-              </button>
+              {step === 0 ? (
+                <button className="btn btn-ghost btn-lg" onClick={close}>
+                  Skip
+                </button>
+              ) : (
+                <button className="btn btn-lg ob-back-btn" onClick={() => setStep(step - 1)}>
+                  <ChevronLeft size={18} strokeWidth={2.3} /> Back
+                </button>
+              )}
               <button className="btn btn-primary btn-lg" onClick={() => setStep(step + 1)}>
                 {step === 0 ? "Show me" : "Next"} <ArrowRight size={18} />
               </button>

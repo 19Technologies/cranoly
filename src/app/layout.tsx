@@ -12,7 +12,7 @@ const mono = Geist_Mono({ subsets: ["latin", "latin-ext"], variable: "--font-mon
 export const metadata: Metadata = {
   title: "Cranoly",
   applicationName: "Cranoly",
-  description: "A linked-notes vault for language learning, with flashcards written right inside your notes.",
+  description: "A language notebook: linked notes, with flashcards written right inside them.",
   appleWebApp: { capable: true, title: "Cranoly", statusBarStyle: "black-translucent" },
   formatDetection: { telephone: false },
 };
@@ -33,11 +33,12 @@ export const viewport: Viewport = {
 // reloads the app on another page, go back to the start (before React loads) instead of
 // rendering the wrong page. The website serves every page's own HTML and is unaffected.
 const APP_START_SCRIPT = `try{var C=window.Capacitor;if(C&&C.isNativePlatform&&C.isNativePlatform()&&location.pathname!=="/")location.replace("/")}catch(e){}`;
-const THEME_SCRIPT = `try{var s=JSON.parse(localStorage.getItem("cranoly-vault")||localStorage.getItem("green-graphite-vault")||"{}").settings||{};var t=s.theme||"paper";if(t==="system")t=matchMedia("(prefers-color-scheme: dark)").matches?"graphite":"paper";document.documentElement.dataset.theme=t}catch(e){document.documentElement.dataset.theme="paper"}`;
+// Graphite (dark) is the default. A Paper install switches to it once (loadState in vault.ts saves that).
+const THEME_SCRIPT = `try{var s=JSON.parse(localStorage.getItem("cranoly-vault")||localStorage.getItem("green-graphite-vault")||"{}").settings||{};var t=s.theme||"graphite";if(t==="paper"&&!localStorage.getItem("cranoly-dark-default"))t="graphite";if(t==="system")t=matchMedia("(prefers-color-scheme: dark)").matches?"graphite":"paper";document.documentElement.dataset.theme=t}catch(e){document.documentElement.dataset.theme="graphite"}`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${display.variable} ${ui.variable} ${mono.variable}`} data-theme="paper" suppressHydrationWarning>
+    <html lang="en" className={`${display.variable} ${ui.variable} ${mono.variable}`} data-theme="graphite" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: APP_START_SCRIPT + THEME_SCRIPT }} />
       </head>

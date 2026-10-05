@@ -1,10 +1,14 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
-import { Download, ClipboardCopy, GraduationCap, Upload, RotateCcw, Smartphone, Sparkles, Share, Sun, Moon, MonitorSmartphone, Type, X } from "lucide-react";
+import {
+  ArrowDownToLine, Check, Download, FolderOpen, GraduationCap, RotateCcw, Save, Share, Share2, Smartphone, Sparkles, Sun, Moon, MonitorSmartphone, Type, X,
+} from "lucide-react";
 import VoiceList from "@/components/Voices";
 import { download } from "@/components/CommandPalette";
+import { pickBackup } from "@/components/BringIn";
+import { allowFolder, chooseFolder, downloadZip, folderKind, forgetFolder, saveNow, setAutoSave, shareCopy, useBackupStatus } from "@/lib/backup";
 import { toast, useVault, vault } from "@/lib/store";
 import type { Settings } from "@/lib/vault";
 import { LANGUAGES, languageOf } from "@/lib/languages";
@@ -16,8 +20,8 @@ import { haptic } from "@/lib/native";
 function Appearance() {
   const { settings } = useVault();
   const options = [
-    { id: "paper", label: "Paper", hint: "Warm and light", icon: <Sun size={18} /> },
     { id: "graphite", label: "Graphite", hint: "Graphite black", icon: <Moon size={18} /> },
+    { id: "paper", label: "Paper", hint: "Warm and light", icon: <Sun size={18} /> },
     { id: "system", label: "System", hint: "Follow device", icon: <MonitorSmartphone size={18} /> },
   ] as const;
   const seg = useSlider<HTMLDivElement>(".is-on", settings.theme);
@@ -229,20 +233,199 @@ const SHORTCUTS: Array<[string, string]> = [
   ["⌘-click", "Open a link in a new tab"],
 ];
 
-export default function SettingsPage() {
+/** Re-render every half minute, so "2 min ago" stays true. */
+function useClock() {
+  return useSyncExternalStore(
+    (tick) => {
+      const id = setInterval(tick, 30_000);
+      return () => clearInterval(id);
+    },
+    () => Math.floor(Date.now() / 30_000),
+    () => 0,
+  );
+}
+
+/** How long ago, in plain words: "just now", "4 min ago", "2 h ago", "yesterday", "3 Oct". */
+function ago(t: number) {
+  const s = (Date.now() - t) / 1000;
+  if (s < 45) return "just now";
+  if (s < 3600) return `${Math.round(s / 60)} min ago`;
+  if (s < 86_400) return `${Math.round(s / 3600)} h ago`;
+  if (s < 2 * 86_400) return "yesterday";
+  return new Date(t).toLocaleDateString(undefined, { day: "numeric", month: "short" });
+}
+
+/**
+ * Backup and sync: the Cranoly folder (each note as a file, plus one backup file), saved as you go,
+ * and how to move notes between devices by bringing in a backup from the other one.
+ */
+function BackupSettings() {
   const { notes, activity } = useVault();
-  const fileInput = useRef<HTMLInputElement>(null);
-  const [confirmReset, setConfirmReset] = useState(false);
+  const s = useBackupStatus();
+  const kind = folderKind();
+  const count = Object.keys(notes).length;
   const bytes = vault.exportJSON().length;
+  useClock();
+
+  const where = kind === "app" ? s.folder ?? "Documents › Cranoly" : s.folder;
+  const state = s.saving
+    ? "Saving…"
+    : s.error
+      ? s.error
+      : s.lastSaved
+        ? `Saved ${ago(s.lastSaved)}${where && kind !== "zip" ? ` to ${where}` : ""}`
+        : kind === "zip"
+          ? "No backup saved on this device yet"
+          : "Not saved yet";
+
+  return (
+    <section className="card-panel" id="backup">
+      <div className="card-panel-head"><h2>Backup and sync</h2></div>
+      {kind === "app" && (
+        <p className="setting-note">
+          Cranoly keeps a copy of everything in <b>Documents › Cranoly</b> on this phone and updates it as you go. Each note is
+          its own file, in the same folders as here, next to one backup file with your study history. A copy from each of the
+          last 7 days is kept too. Open the Files app to see it.
+        </p>
+      )}
+      {kind === "pick" && (
+        <p className="setting-note">
+          {s.where === "folder"
+            ? "Cranoly keeps a copy of everything in this folder and updates it as you go: each note as its own file, in the same folders as here, next to one backup file with your study history."
+            : "Choose a folder and Cranoly keeps a copy of everything in it as you go: each note as its own file, in the same folders as here, next to one backup file with your study history. Choose a folder in Google Drive, Dropbox or iCloud Drive and your notes are online too."}
+        </p>
+      )}
+      {kind === "zip" && (
+        <p className="setting-note">
+          Save a backup to download <b>Cranoly.zip</b>: each note as its own file, in the same folders as here, next to one
+          backup file with your study history. Keep it somewhere safe, like Google Drive.
+        </p>
+      )}
+
+      {(kind !== "pick" || s.where === "folder") && (
+        <p className={`backup-status${s.error ? " is-error" : s.lastSaved ? " is-saved" : ""}`} role="status">
+          {s.lastSaved && !s.error && !s.saving ? <Check size={15} /> : <FolderOpen size={15} />} {state}
+          {kind === "app" && ` · ${count} ${count === 1 ? "note" : "notes"}`}
+        </p>
+      )}
+      {s.needsPermission && (
+        <div className="backup-allow">
+          <span>Your browser asks once after a restart before Cranoly can save to the folder again.</span>
+          <button className="btn btn-primary" onClick={() => void allowFolder()}>
+            <FolderOpen size={14} /> Allow
+          </button>
+        </div>
+      )}
+
+      <div className="btn-row">
+        {kind === "app" && (
+          <>
+            <button className="btn" onClick={() => void saveNow({ all: true })}>
+              <Save size={14} /> Save now
+            </button>
+            <button className="btn" onClick={() => void shareCopy().catch(() => toast("Couldn’t open the share sheet"))}>
+              <Share2 size={14} /> Share a copy
+            </button>
+          </>
+        )}
+        {kind === "pick" &&
+          (s.where === "folder" ? (
+            <>
+              <button className="btn" onClick={() => void saveNow({ all: true })}>
+                <Save size={14} /> Save now
+              </button>
+              <button className="btn" onClick={() => void chooseFolder().catch(() => {})}>
+                <FolderOpen size={14} /> Change folder
+              </button>
+              <button className="btn" onClick={() => void forgetFolder()}>
+                <X size={14} /> Stop saving here
+              </button>
+            </>
+          ) : (
+            <>
+              <button className="btn btn-primary" onClick={() => void chooseFolder().catch(() => {})}>
+                <FolderOpen size={14} /> Choose a folder
+              </button>
+              <button className="btn" onClick={downloadZip}>
+                <Download size={14} /> Save a backup (.zip)
+              </button>
+            </>
+          ))}
+        {kind === "zip" && (
+          <button className="btn btn-primary" onClick={downloadZip}>
+            <Download size={14} /> Save a backup
+          </button>
+        )}
+        <button className="btn" onClick={() => pickBackup()}>
+          <ArrowDownToLine size={14} /> Bring in changes
+        </button>
+      </div>
+      {kind === "app" && (
+        <label className="setting">
+          <span className="setting-text">
+            <b>Save automatically</b>
+            <span>Update the Cranoly folder a few seconds after each change.</span>
+          </span>
+          <span className="switch">
+            <input type="checkbox" checked={s.auto} onChange={(e) => setAutoSave(e.target.checked)} />
+            <span className="switch-track" />
+          </span>
+        </label>
+      )}
+
+      <h3 className="setting-sub">Your notes on another device</h3>
+      <ol className="sync-steps">
+        <li>
+          {kind === "app" ? (
+            <>On the device with your newest notes, tap <b>Share a copy</b> and send it to Google Drive, Quick Share or email.</>
+          ) : (
+            <>Save a backup on the device with your newest notes. On a phone, that&apos;s <b>Share a copy</b>.</>
+          )}
+        </li>
+        <li>
+          On the other device, tap <b>Bring in changes</b> and pick that backup. On a phone, the picker can open Google Drive
+          directly.
+        </li>
+        <li>New notes are added and edits come across. A note changed on both devices is kept twice, so nothing is lost.</li>
+      </ol>
+      {kind === "pick" && (
+        <p className="setting-note">
+          Keep the Cranoly folder in Google Drive, and a backup your phone shares into it is brought in when you open Cranoly here.
+        </p>
+      )}
+      <p className="setting-fine">
+        {count} {count === 1 ? "note" : "notes"}, {Object.keys(activity).length} days of study history, {(bytes / 1024).toFixed(1)} KB.{" "}
+        <button
+          className="link-btn"
+          onClick={async () => {
+            try {
+              await navigator.clipboard.writeText(vault.exportMarkdown());
+              toast("All notes copied as Markdown");
+            } catch {
+              download("cranoly-notes.md", vault.exportMarkdown(), "text/markdown");
+            }
+          }}
+        >
+          Copy all as Markdown
+        </button>
+      </p>
+    </section>
+  );
+}
+
+export default function SettingsPage() {
+  const { notes } = useVault();
+  const [confirmReset, setConfirmReset] = useState(false);
 
   return (
     <div className="page page-narrow">
       <header className="page-header">
-        <p className="eyebrow"><span className="dot" /> Settings</p>
+        <p className="eyebrow">Settings</p>
         <h1>Settings</h1>
       </header>
 
       <Appearance />
+      <BackupSettings />
       <LanguageSettings />
       <VoiceSettings />
       <InstallApp />
@@ -258,48 +441,6 @@ export default function SettingsPage() {
         <div className="card-panel-head"><h2>Mind Map</h2></div>
         <Toggle field="showTagsInGraph" label="Show tags" hint="Draw #tags as their own dots, linked to the notes that use them." />
         <Toggle field="showOrphansInGraph" label="Show orphans" hint="Include notes that don't link to anything." />
-      </section>
-
-      <section className="card-panel">
-        <div className="card-panel-head"><h2>Your data</h2></div>
-        <p className="setting-note">
-          Your notes live on this device: {Object.keys(notes).length} notes, {Object.keys(activity).length} days of study
-          history, {(bytes / 1024).toFixed(1)} KB. Save a backup now and then.
-        </p>
-        <div className="btn-row">
-          <button className="btn" onClick={() => download("cranoly-vault.json", vault.exportJSON())}>
-            <Download size={14} /> Save a backup
-          </button>
-          <button
-            className="btn"
-            onClick={async () => {
-              try {
-                await navigator.clipboard.writeText(vault.exportMarkdown());
-                toast("All notes copied as Markdown");
-              } catch {
-                download("cranoly-notes.md", vault.exportMarkdown(), "text/markdown");
-              }
-            }}
-          >
-            <ClipboardCopy size={14} /> Copy all as Markdown
-          </button>
-          <button className="btn" onClick={() => fileInput.current?.click()}>
-            <Upload size={14} /> Restore a backup
-          </button>
-          <input
-            ref={fileInput}
-            type="file"
-            accept="application/json,.json"
-            hidden
-            onChange={async (e) => {
-              const file = e.target.files?.[0];
-              e.target.value = "";
-              if (!file) return;
-              const err = vault.importJSON(await file.text());
-              if (err) toast(err);
-            }}
-          />
-        </div>
       </section>
 
       <section className="card-panel">
@@ -331,7 +472,7 @@ export default function SettingsPage() {
 
       <section className="card-panel danger">
         <div className="card-panel-head"><h2>Reset</h2></div>
-        <p className="setting-note">Delete every note and start again with an empty vault. Export first if you want to keep your notes.</p>
+        <p className="setting-note">Delete every note on this device and start again. Save a backup first if you want to keep them.</p>
         {confirmReset ? (
           <div className="btn-row">
             <span className="confirm-text">This deletes all {Object.keys(notes).length} notes.</span>

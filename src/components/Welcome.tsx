@@ -1,26 +1,28 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Check, Download, Layers, Link2, Loader2, Plus, Volume2, Wifi } from "lucide-react";
+import { ArrowRight, Check, ChevronLeft, Download, Layers, Link2, Loader2, Plus, Volume2, Wifi } from "lucide-react";
 import Logo from "./Logo";
 import VoiceList from "./Voices";
 import Tumble from "./Tumble";
-import { toast, useVault, vault } from "@/lib/store";
+import { getVault, useVault, vault } from "@/lib/store";
+import { bringIn, replaceWith } from "@/lib/backup";
+import { pickBackup } from "./BringIn";
 import { LANGUAGES, languageOf } from "@/lib/languages";
 import { useMeaning } from "@/lib/useMeaning";
 import { haptic } from "@/lib/native";
+import { onBack } from "@/lib/ui";
 import { say } from "@/lib/smart";
-import { downloadSize, downloadVoice, useVoices, voiceReady } from "@/lib/voices";
+import { downloadSize, downloadVoice, useVoiceWarmup, useVoices, voiceReady } from "@/lib/voices";
 
 const FEATURED = ["de", "es", "fr", "en", "it", "pt", "ja", "sw"];
 
-function Dots({ step }: { step: number }) {
+/** How far through the four setup screens you are: one line that fills up. */
+function Progress({ step }: { step: number }) {
   return (
-    <div className="wc-dots" aria-label={`Step ${step + 1} of 4`}>
-      {[0, 1, 2, 3].map((i) => (
-        <i key={i} className={i <= step ? "is-on" : ""} />
-      ))}
+    <div className="wc-progress" role="progressbar" aria-valuemin={1} aria-valuemax={4} aria-valuenow={step} aria-label={`Step ${step} of 4`}>
+      <i style={{ width: `${(step / 4) * 100}%` }} />
     </div>
   );
 }
@@ -30,7 +32,6 @@ const listOf = (names: string[]) => (names.length < 2 ? names.join("") : `${name
 
 /** What Cranoly is, in three lines. */
 function Intro({ onNext, onRestored }: { onNext: () => void; onRestored: () => void }) {
-  const file = useRef<HTMLInputElement>(null);
   return (
     <>
       <div className="wc-hero" aria-hidden>
@@ -61,30 +62,28 @@ function Intro({ onNext, onRestored }: { onNext: () => void; onRestored: () => v
         </button>
       </div>
       <p className="wc-restore">
-        Moving from another phone? <button onClick={() => file.current?.click()}>Restore a backup</button>
+        Already use Cranoly?{" "}
+        <button
+          onClick={() =>
+            pickBackup((incoming) => {
+              // A new device takes everything, settings too; one with notes brings the changes in.
+              if (Object.keys(getVault().notes).length) bringIn(incoming);
+              else replaceWith(incoming);
+              onRestored();
+            })
+          }
+        >
+          Bring in your notes
+        </button>
       </p>
-      <input
-        ref={file}
-        type="file"
-        accept="application/json,.json"
-        hidden
-        onChange={async (e) => {
-          const picked = e.target.files?.[0];
-          e.target.value = "";
-          if (!picked) return;
-          const err = vault.importJSON(await picked.text());
-          if (err) toast(err);
-          else onRestored();
-        }}
-      />
     </>
   );
 }
 
-/** Which languages: one or more. The first one picked is the main one. */
-function Languages({ onNext }: { onNext: (picked: string[]) => void }) {
+/** Which languages: one or more. The first one picked is the main one. Coming back, your picks are still there. */
+function Languages({ initial, onNext }: { initial: string[]; onNext: (picked: string[]) => void }) {
   const { settings } = useVault();
-  const [picked, setPicked] = useState<string[]>([]);
+  const [picked, setPicked] = useState<string[]>(initial);
   const toggle = (code: string) => {
     haptic();
     setPicked((p) => (p.includes(code) ? p.filter((c) => c !== code) : [...p, code]));
@@ -289,6 +288,7 @@ function TryIt({ card, onDone }: { card: { front: string; back: string } | null;
   const lang = languageOf(settings.learning);
   const voice = voices[lang.code];
   const [flipped, setFlipped] = useState(false);
+  useVoiceWarmup(lang.code);
   if (!card) {
     return (
       <>
@@ -344,8 +344,24 @@ function TryIt({ card, onDone }: { card: { front: string; back: string } | null;
 
 function Flow() {
   const router = useRouter();
-  const [step, setStep] = useState(0);
+  // The screens you've seen, so Back returns to the one you came from (the voices screen only shows for some languages).
+  const [seen, setSeen] = useState([0]);
+  const step = seen[seen.length - 1];
+  const setStep = (next: number) => setSeen((s) => [...s, next]);
+  const back = () => setSeen((s) => (s.length > 1 ? s.slice(0, -1) : s));
   const [card, setCard] = useState<{ front: string; back: string } | null>(null);
+  const [languages, setLanguages] = useState<string[]>([]);
+  // Android's back button steps back too; on the first screen it leaves the app as usual.
+  const canBack = seen.length > 1;
+  useEffect(
+    () =>
+      onBack(() => {
+        if (!canBack) return false;
+        setSeen((s) => s.slice(0, -1));
+        return true;
+      }),
+    [canBack],
+  );
   const finish = () => {
     vault.updateSettings({ onboarded: true });
     router.push(window.matchMedia("(max-width: 820px)").matches ? "/notes" : "/");
@@ -360,7 +376,10 @@ function Flow() {
             </span>
           ) : (
             <>
-              <Dots step={step - 1} />
+              <button className="wc-back" onClick={back} aria-label="Back">
+                <ChevronLeft size={19} strokeWidth={2.3} /> Back
+              </button>
+              <Progress step={step} />
               <button className="wc-skip" onClick={finish}>
                 Skip
               </button>
@@ -370,7 +389,13 @@ function Flow() {
         <div className="wc-body" key={step}>
           {step === 0 && <Intro onNext={() => setStep(1)} onRestored={finish} />}
           {step === 1 && (
-            <Languages onNext={(picked) => setStep(picked.some((c) => languageOf(c).model && !voiceReady(c)) ? 2 : 3)} />
+            <Languages
+              initial={languages}
+              onNext={(picked) => {
+                setLanguages(picked);
+                setStep(picked.some((c) => languageOf(c).model && !voiceReady(c)) ? 2 : 3);
+              }}
+            />
           )}
           {step === 2 && <Voices onNext={() => setStep(3)} />}
           {step === 3 && (

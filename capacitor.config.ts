@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: "Cranoly",
   webDir: "out",
   android: {
-    backgroundColor: "#fbf7f0",
+    backgroundColor: "#1b1b1e",
   },
   plugins: {
     SystemBars: {

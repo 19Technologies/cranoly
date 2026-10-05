@@ -61,11 +61,69 @@ function getSnapshot() {
   return state;
 }
 
-function set(update: (s: VaultState) => VaultState) {
-  state = update(state);
+/**
+ * What bringing in notes from another device relies on: a note that changes gets a new change time
+ * (unless the change brought its own, as a merge does), deleted notes and folders are remembered,
+ * and ones that come back are forgotten.
+ */
+function track(prev: VaultState, next: VaultState): VaultState {
+  if (prev.notes === next.notes && prev.folders === next.folders) return next;
+  const now = Date.now();
+  let notes = next.notes;
+  let deleted = next.deleted;
+  let deletedFolders = next.deletedFolders;
+  if (prev.notes !== next.notes) {
+    for (const id in next.notes) {
+      const n = next.notes[id];
+      const before = prev.notes[id];
+      if (before === n) continue;
+      if (n.modified === undefined || (before && n.modified === before.modified)) {
+        if (notes === next.notes) notes = { ...notes };
+        notes[id] = { ...n, modified: now };
+      }
+      if (deleted[id] !== undefined) {
+        if (deleted === next.deleted) deleted = { ...deleted };
+        delete deleted[id];
+      }
+    }
+    for (const id in prev.notes) {
+      if (next.notes[id] || deleted[id] !== undefined) continue;
+      if (deleted === next.deleted) deleted = { ...deleted };
+      deleted[id] = now;
+    }
+  }
+  if (prev.folders !== next.folders) {
+    for (const f of prev.folders) {
+      if (next.folders.includes(f) || deletedFolders[f] !== undefined) continue;
+      if (deletedFolders === next.deletedFolders) deletedFolders = { ...deletedFolders };
+      deletedFolders[f] = now;
+    }
+    for (const f of next.folders) {
+      if (deletedFolders[f] === undefined || prev.folders.includes(f)) continue;
+      if (deletedFolders === next.deletedFolders) deletedFolders = { ...deletedFolders };
+      delete deletedFolders[f];
+    }
+  }
+  return notes === next.notes && deleted === next.deleted && deletedFolders === next.deletedFolders
+    ? next
+    : { ...next, notes, deleted, deletedFolders };
+}
+
+/** Change the vault. `track: false` puts back an earlier state exactly as it was (Undo). */
+function set(update: (s: VaultState) => VaultState, opts: { track?: boolean } = {}) {
+  const prev = state;
+  const next = update(prev);
+  state = opts.track === false || !prev.ready ? next : track(prev, next);
   listeners.forEach((l) => l());
   if (saveTimer) clearTimeout(saveTimer);
   saveTimer = setTimeout(flush, 300);
+}
+
+/** Listen for any change to the vault (the backup folder saves after changes). */
+export function onVaultChange(listener: () => void) {
+  ensureLoaded();
+  listeners.add(listener);
+  return () => listeners.delete(listener);
 }
 
 export const getVault = () => state;
@@ -496,23 +554,25 @@ export const vault = {
       .join("\n---\n\n");
   },
 
-  importJSON(text: string): string | null {
-    try {
-      const parsed = JSON.parse(text);
-      if (!parsed || typeof parsed !== "object" || typeof parsed.notes !== "object") {
-        return "That file isn't a Cranoly vault export.";
-      }
-      const before = state;
-      set(() => normalize(parsed));
-      toast(`Imported ${Object.keys(state.notes).length} notes`, { label: "Undo", run: () => set(() => before) });
-      return null;
-    } catch {
-      return "That file isn't valid JSON.";
-    }
+  /**
+   * Take a whole new vault: a merge brought in from another device, or a backup replacing everything.
+   * Undo puts back exactly what was here before.
+   */
+  adopt(next: VaultState, message: string, undo?: () => void, opts: { track?: boolean } = {}) {
+    const before = state;
+    set(() => ({ ...next, ready: true }), opts);
+    toast(message, {
+      label: "Undo",
+      run: () => {
+        set(() => before, { track: false });
+        undo?.();
+      },
+    });
   },
 
+  /** Start again with no notes. Nothing is remembered as deleted, so notes can be brought back in later. */
   reset() {
-    set(() => emptyState());
+    set(() => emptyState(), { track: false });
   },
 };
 

@@ -5,6 +5,7 @@ import { ArrowUpRight, Plus, Volume2, WifiOff } from "lucide-react";
 import Sheet from "./Sheet";
 import { haptic } from "@/lib/native";
 import { cardsOf, toast, useVault, vault } from "@/lib/store";
+import { useVoiceWarmup } from "@/lib/voices";
 import { languageOf, type Language } from "@/lib/languages";
 import { LookupError, lookup, shortMeaning, withArticle, type Lookup } from "@/lib/lookup";
 import { say } from "@/lib/smart";
@@ -142,6 +143,7 @@ function Result({ word, lang, noteId, onLookUp }: { word: string; lang: Language
 function Explain({ word, noteId }: { word: string; noteId: string | null }) {
   const { settings } = useVault();
   const lang = languageOf(settings.learning);
+  useVoiceWarmup(lang.code);
   const [current, setCurrent] = useState(word);
   return (
     <Sheet open title={`Explain · ${lang.name}`} onClose={close} className="word-sheet">

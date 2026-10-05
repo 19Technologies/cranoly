@@ -24,7 +24,7 @@ export default function manifest(): MetadataRoute.Manifest {
       { name: "Today's daily note", short_name: "Daily note", url: "/?daily=1" },
       { name: "New note", url: "/?new=1" },
       { name: "Study flashcards", short_name: "Study", url: "/flashcards/study" },
-      { name: "Graph view", short_name: "Graph", url: "/graph" },
+      { name: "Mind Map", short_name: "Mind Map", url: "/mind-map" },
     ],
   };
 }

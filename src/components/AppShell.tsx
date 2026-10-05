@@ -7,6 +7,7 @@ import { dismissToast, getVault, useToasts, useVault, vault } from "@/lib/store"
 import { getUI, setUI, useUI } from "@/lib/ui";
 import { applyTheme } from "@/lib/theme";
 import { usePhone } from "@/lib/usePhone";
+import { expectPlace, placePath, recordPlace } from "@/lib/trail";
 import Sidebar from "./Sidebar";
 import NoteList from "./NoteList";
 import CommandPalette from "./CommandPalette";
@@ -22,6 +23,8 @@ import Welcome from "./Welcome";
 import AddWord from "./AddWord";
 import FormatSheet from "./FormatSheet";
 import ScanSheet from "./ScanSheet";
+import BringIn from "./BringIn";
+import { startBackup } from "@/lib/backup";
 
 function Toasts() {
   const toasts = useToasts();
@@ -211,8 +214,27 @@ export default function AppShell({ children }: { children: ReactNode }) {
     if (!ready || launched) return;
     launched = true;
     const phone = window.matchMedia("(max-width: 820px)").matches;
-    if (phone && pathname === "/" && !new URLSearchParams(window.location.search).has("note")) router.replace("/notes");
+    if (phone && pathname === "/" && !new URLSearchParams(window.location.search).has("note")) {
+      expectPlace("/notes");
+      router.replace("/notes");
+    }
   }, [ready, pathname, router]);
+
+  // The Cranoly folder: saved as you go (the phone's Documents › Cranoly, or a folder chosen on a laptop).
+  useEffect(() => {
+    if (ready) return startBackup((path) => router.push(path));
+  }, [ready, router]);
+
+  // The trail behind the phone bar's ‹ and ›: every screen, note (on "/") and folder (on "/notes") you visit.
+  const placeDetail = pathname === "/" ? workspace.active : pathname === "/notes" ? workspace.folder : null;
+  useEffect(() => {
+    if (!ready) return;
+    recordPlace({
+      path: placePath(pathname, window.location.search),
+      note: pathname === "/" ? placeDetail : undefined,
+      folder: pathname === "/notes" ? (placeDetail ?? "") : undefined,
+    });
+  }, [ready, pathname, placeDetail]);
 
   return (
     <div
@@ -248,6 +270,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
       <AddWord />
       <FormatSheet />
       <ScanSheet />
+      <BringIn />
       <WordSheet />
       <NewWordsSheet />
       <Toasts />

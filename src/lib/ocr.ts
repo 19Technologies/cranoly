@@ -139,13 +139,22 @@ function lineOf(l: ScanLine, width: number): Line | null {
  * A paragraph's lines. Prose fills its column, so all its lines but the last run nearly full width: join them
  * back up, making words split by a hyphen whole. A list's lines are ragged, or pair words with "=" or a dash.
  */
+/** A word and its meaning with a spaced dash between them, on a line of its own: a few words each side, no sentence. */
+const SHORT_PAIR = /^([^.!?]{1,40}?)\s[–—-]\s([^.!?]{1,48})$/;
+const shortPair = (t: string) => {
+  const m = SHORT_PAIR.exec(t);
+  return m && m[1].split(/\s+/).length <= 4 && m[2].split(/\s+/).length <= 6 ? `${m[1]} = ${m[2]}` : t;
+};
+
 function paragraph(lines: Line[]) {
   const texts = lines.map((l) => l.text);
-  if (lines.length === 1) return texts[0];
+  if (lines.length === 1) return shortPair(texts[0]);
   const width = Math.max(...lines.map((l) => l.bbox.x1 - l.bbox.x0));
   const full = lines.slice(0, -1).filter((l) => l.bbox.x1 - l.bbox.x0 >= width * 0.72).length / (lines.length - 1);
   const paired = texts.filter((t) => PAIRED.test(t)).length / texts.length;
-  if (full < 0.7 || paired > 0.5) return texts.join("\n");
+  // A word list printed with dashes between word and meaning comes back the way Cranoly writes pairs: "der Hund = the dog".
+  if (paired > 0.5) return texts.map((t) => t.replace(/\s[–—-]\s/, " = ")).join("\n");
+  if (full < 0.7) return texts.join("\n");
   return texts
     .join("\n")
     .replace(/(\p{L})[-¬]\n(?=\p{Ll})/gu, "$1")

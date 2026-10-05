@@ -12,12 +12,12 @@
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <item name="android:background">@null</item>
-        <item name="android:windowBackground">@color/cranoly_paper</item>
+        <item name="android:windowBackground">@color/cranoly_graphite</item>
     </style>
 
-    <!-- Launch screen: the Cranoly C in a mint circle on Paper. -->
+    <!-- Launch screen: the Cranoly C in a mint circle on Graphite (the app opens dark). -->
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenBackground">@color/cranoly_paper</item>
+        <item name="windowSplashScreenBackground">@color/cranoly_graphite</item>
         <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_foreground</item>
         <item name="windowSplashScreenIconBackgroundColor">@color/ic_launcher_background</item>
         <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>

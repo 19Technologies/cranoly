@@ -1,6 +1,6 @@
 // Cranoly service worker: makes the installed app work offline.
 // Hashed build assets are cached forever; pages are network-first with a cached fallback.
-const CACHE = "cranoly-v5";
+const CACHE = "cranoly-v6";
 const SHELL = ["/", "/notes", "/search", "/mind-map", "/dictionary", "/formatting", "/flashcards", "/flashcards/study", "/settings", "/manifest.webmanifest", "/icon.png"];
 
 self.addEventListener("install", (event) => {

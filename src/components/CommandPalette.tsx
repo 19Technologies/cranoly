@@ -8,7 +8,9 @@ import {
   CodeXml,
   TableProperties,
   Columns2,
+  ArrowDownToLine,
   Download,
+  Share2,
   Eye,
   FilePlus2,
   FileText,
@@ -39,6 +41,8 @@ import { addProperties, checkWriting, explain, findNewWords, hear, makeCards, wi
 import { folderOf, titleOf } from "@/lib/vault";
 import { rank } from "@/lib/fuzzy";
 import { cardsOf, useVault, vault } from "@/lib/store";
+import { downloadZip, folderKind, saveNow, shareCopy } from "@/lib/backup";
+import { pickBackup } from "./BringIn";
 import { openSearch, setUI, useUI } from "@/lib/ui";
 
 interface Command {
@@ -94,7 +98,9 @@ function Palette({ mode }: { mode: "commands" | "notes" }) {
       { id: "random", label: "Open a random note", icon: <Shuffle size={15} />, run: () => { vault.openRandom(); router.push("/"); } },
       { id: "left", label: "Toggle left sidebar", icon: <PanelLeft size={15} />, hint: "⌘\\", run: () => vault.setPanel("leftOpen") },
       { id: "right", label: "Toggle right sidebar", icon: <PanelRight size={15} />, run: () => vault.setPanel("rightOpen") },
-      { id: "export", label: "Export vault as JSON", icon: <Download size={15} />, run: () => download("cranoly-vault.json", vault.exportJSON()) },
+      { id: "backup", label: folderKind() === "zip" ? "Save a backup (Cranoly.zip)" : "Save to the Cranoly folder now", icon: <Download size={15} />, run: () => (folderKind() === "zip" ? downloadZip() : void saveNow()) },
+      { id: "bring-in", label: "Bring in changes from another device", icon: <ArrowDownToLine size={15} />, run: () => pickBackup() },
+      ...(folderKind() === "app" ? [{ id: "share-copy", label: "Share a copy of your notes", icon: <Share2 size={15} />, run: () => void shareCopy().catch(() => {}) }] : []),
       { id: "settings", label: "Open settings", icon: <Settings size={15} />, run: go("/settings") },
       { id: "learn", label: "Learn the basics: take the tour", icon: <GraduationCap size={15} />, run: () => setUI({ onboarding: true }) },
       { id: "formatting", label: "Formatting guide: everything you can write", icon: <Type size={15} />, run: go("/formatting") },

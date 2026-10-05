@@ -7,6 +7,7 @@ import Sheet from "./Sheet";
 import Tumble from "./Tumble";
 import { haptic } from "@/lib/native";
 import { toast, useVault, vault, wordsNoteTitle } from "@/lib/store";
+import { useVoiceWarmup } from "@/lib/voices";
 import { languageOf } from "@/lib/languages";
 import { useMeaning } from "@/lib/useMeaning";
 import { pairOf } from "@/lib/words";
@@ -67,6 +68,7 @@ const short = (t: string) => (t.length > 32 ? `${t.slice(0, 31).trimEnd()}…` :
 function WordForm({ noteId, initial }: { noteId: string | null; initial?: string }) {
   const { settings } = useVault();
   const lang = languageOf(settings.learning);
+  useVoiceWarmup(lang.code);
   const [word, setWord] = useState(initial ?? "");
   const [typed, setTyped] = useState<string | null>(null);
   const [target, setTarget] = useState(noteId);

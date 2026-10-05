@@ -1,5 +1,6 @@
 "use client";
 // Ephemeral UI state shared across components (not persisted).
+import type { Incoming } from "./backup";
 import { useSyncExternalStore } from "react";
 import type { InstallPromptEvent } from "@/components/ServiceWorker";
 
@@ -38,6 +39,8 @@ export interface UIState {
   scan: { noteId: string | null } | null;
   /** "Format": the note being handed to an AI assistant, and pasted back. */
   format: { noteId: string } | null;
+  /** "Bring in changes": a backup picked from another device, waiting for a yes. */
+  bringIn: Incoming | null;
 }
 
 const INITIAL: UIState = {
@@ -59,6 +62,7 @@ const INITIAL: UIState = {
   renameFolder: null,
   scan: null,
   format: null,
+  bringIn: null,
 };
 
 let ui = INITIAL;
@@ -88,4 +92,22 @@ export function useUI() {
 /** Fill in the search screen's query (then go to /search). */
 export function openSearch(query = "") {
   setUI({ searchQuery: query, mobileLeft: false });
+}
+
+/* Android's back button: an open overlay (the welcome, the tour) can take it before anything else. */
+const backHandlers: Array<() => boolean> = [];
+
+/** Handle the back button while mounted. The handler returns true when it used the press. */
+export function onBack(handler: () => boolean) {
+  backHandlers.push(handler);
+  return () => {
+    const i = backHandlers.lastIndexOf(handler);
+    if (i >= 0) backHandlers.splice(i, 1);
+  };
+}
+
+/** Offer a back press to the overlays, newest first. True when one of them used it. */
+export function runBack() {
+  for (let i = backHandlers.length - 1; i >= 0; i--) if (backHandlers[i]()) return true;
+  return false;
 }

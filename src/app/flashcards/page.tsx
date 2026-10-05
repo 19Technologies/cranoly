@@ -86,7 +86,7 @@ export default function FlashcardsPage() {
   return (
     <div className="page">
       <header className="page-header">
-        <p className="eyebrow"><span className="dot" /> Flashcards</p>
+        <p className="eyebrow">Flashcards</p>
         <h1>Practice</h1>
         <p className="page-lede">
           {cards.length

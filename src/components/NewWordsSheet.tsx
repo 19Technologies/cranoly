@@ -5,6 +5,7 @@ import { BookA, Loader2, Plus, Volume2 } from "lucide-react";
 import Sheet from "./Sheet";
 import { haptic } from "@/lib/native";
 import { cardsOf, getVault, toast, useVault, vault } from "@/lib/store";
+import { useVoiceWarmup } from "@/lib/voices";
 import { languageOf } from "@/lib/languages";
 import { lookup, shortMeaning, withArticle } from "@/lib/lookup";
 import { knownWords, newWords } from "@/lib/words";
@@ -25,6 +26,7 @@ const close = () => setUI({ newWords: null });
 function NewWords({ text, noteId }: { text: string; noteId: string }) {
   const { settings, notes } = useVault();
   const lang = languageOf(settings.learning);
+  useVoiceWarmup(lang.code);
   // Worked out once when the sheet opens, so the list doesn't shift while you fill it in.
   const [rows, setRows] = useState<Row[]>(() =>
     newWords(text, knownWords(cardsOf(getVault().notes)), languageOf(getVault().settings.learning)).map((word) => ({

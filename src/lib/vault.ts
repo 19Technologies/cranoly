@@ -7,7 +7,10 @@ export interface Note {
   path: string;
   content: string;
   created: number;
+  /** When it was last edited: the notes list is ordered by this. */
   updated: number;
+  /** When anything about it last changed, renames and rewritten links too: what bringing in notes compares. */
+  modified?: number;
   /** Pinned notes stay at the top of the notes list. */
   pinned?: boolean;
 }
@@ -62,6 +65,10 @@ export interface VaultState {
   activity: Record<string, number>;
   /** Card id → when its answer was last revealed (for "Not seen lately"). */
   seen: Record<string, number>;
+  /** Note id → when it was deleted, so bringing in notes from another device deletes it there too. */
+  deleted: Record<string, number>;
+  /** Folder path → when it was deleted. */
+  deletedFolders: Record<string, number>;
   settings: Settings;
   workspace: Workspace;
 }
@@ -71,7 +78,7 @@ export const STORAGE_KEY = "cranoly-vault";
 const OLDER_KEYS = ["green-graphite-vault", "kurzbite-vault-v2"];
 
 export const DEFAULT_SETTINGS: Settings = {
-  theme: "paper",
+  theme: "graphite",
   shuffle: false,
   startWithBack: false,
   blurAnswersInNotes: true,
@@ -110,6 +117,8 @@ export function emptyState(native = "en"): VaultState {
     folders: [],
     activity: {},
     seen: {},
+    deleted: {},
+    deletedFolders: {},
     settings: { ...DEFAULT_SETTINGS, native },
     workspace: {
       tabs: [],
@@ -161,12 +170,24 @@ export function normalize(input: Partial<VaultState>): VaultState {
   if (ws.active && !notes[ws.active]) ws.active = ws.tabs[0] ?? null;
   ws.history = ws.history.filter((id) => notes[id]);
   ws.historyIndex = Math.min(ws.historyIndex, ws.history.length - 1);
+  // Every note has a change time (older saves only had `updated`).
+  for (const [id, n] of Object.entries(notes)) if (typeof n.modified !== "number") notes[id] = { ...n, modified: n.updated };
+  // Deletions are remembered for 90 days.
+  const recent = (m: unknown) => {
+    const out: Record<string, number> = {};
+    const now = Date.now();
+    if (m && typeof m === "object")
+      for (const [k, at] of Object.entries(m)) if (typeof at === "number" && now - at < 90 * 24 * 3600 * 1000) out[k] = at;
+    return out;
+  };
   return {
     ready: true,
     notes,
     folders: Array.isArray(input.folders) ? input.folders : [],
     activity: input.activity && typeof input.activity === "object" ? input.activity : {},
     seen: input.seen && typeof input.seen === "object" ? input.seen : {},
+    deleted: recent(input.deleted),
+    deletedFolders: recent(input.deletedFolders),
     settings: withLanguages({
       ...DEFAULT_SETTINGS,
       native: deviceLanguage(),
@@ -212,21 +233,37 @@ function migrateLegacy(): VaultState | null {
   return state;
 }
 
+const DARK_DEFAULT = "cranoly-dark-default";
+
+/**
+ * Graphite (dark) became the default theme. An install still on Paper switches to it once; after that
+ * the theme is the learner's choice again. The startup script in layout.tsx applies the same rule.
+ */
+function darkOnce(state: VaultState): VaultState {
+  try {
+    if (localStorage.getItem(DARK_DEFAULT)) return state;
+    localStorage.setItem(DARK_DEFAULT, "1");
+  } catch {
+    return state;
+  }
+  return state.settings.theme === "paper" ? { ...state, settings: { ...state.settings, theme: "graphite" } } : state;
+}
+
 export function loadState(): VaultState {
   const saved = safeParse<Partial<VaultState>>(localStorage.getItem(STORAGE_KEY));
   if (saved) {
-    const state = normalize(saved);
+    const state = darkOnce(normalize(saved));
     saveState(state); // persist any clean-up done by normalize()
     return state;
   }
   for (const key of OLDER_KEYS) {
     const older = safeParse<Partial<VaultState>>(localStorage.getItem(key));
     if (!older) continue;
-    const state = normalize(older);
+    const state = darkOnce(normalize(older));
     if (saveState(state)) localStorage.removeItem(key);
     return state;
   }
-  const state = migrateLegacy() ?? emptyState(deviceLanguage());
+  const state = darkOnce(migrateLegacy() ?? emptyState(deviceLanguage()));
   saveState(state);
   return state;
 }

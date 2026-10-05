@@ -67,7 +67,7 @@ export default function GraphCanvas({
     return cssVar(`--mm-${(folders.indexOf(node.folder) % 8) + 1}`, "#a677f8");
   };
 
-  // Flat dots on a night sky: saturated colours, faint lines; the open note is the brightest; hovered links turn green.
+  // Flat dots on a dark background: saturated colours, faint lines; the open note is the brightest; hovered links turn green.
   const drawNode = (node: GraphNode, ctx: CanvasRenderingContext2D, scale: number) => {
     const focused = cssVar("--mm-focus", "#ffffff");
     const text = cssVar("--mm-label", "#e6e8ff");
@@ -104,7 +104,7 @@ export default function GraphCanvas({
     const t = (link.target as GraphNode)?.id;
     const line = cssVar("--mm-line", "rgba(170, 180, 255, 0.16)");
     // Links are the only thing drawn in green.
-    if (hover.current && (s === hover.current || t === hover.current)) return cssVar("--link", "#c5e8b2");
+    if (hover.current && (s === hover.current || t === hover.current)) return cssVar("--mm-hot", "#c5e8b2");
     // Lines that aren't the hovered note's fade further while one is hovered.
     if (hover.current) return line.replace(/[\d.]+\)$/, (a) => `${Number(a.slice(0, -1)) * 0.4})`);
     return line;
