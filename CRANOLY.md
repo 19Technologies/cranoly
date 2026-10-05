@@ -1,7 +1,7 @@
 # Cranoly Style Reference
 > a sticker notebook for words, on warm paper
 
-**Theme:** light (Paper) and dark (Graphite)
+**Theme:** dark (Graphite) by default, and light (Paper)
 
 **Lineage:** Cranoly's own look comes from the Tutora brand: warm paper, ink outlines, hard "pop" shadows, one orange, pastel tints, Fraunces and Instrument Sans, and the yellow flashcard. From slush.app (SLUSHDESIGN.md) it takes **only the micro-animations**. The curves and timings are measured from slush.app's own CSS, not guessed.
 
@@ -58,18 +58,22 @@ Orange, Sun, Sky, Lilac and Peach are the same in both themes. Text on them is a
 
 ### Mind Map and heatmap
 
-The Mind Map is a night sky: small, saturated dots, one colour per top-level folder, on deep space in Graphite and a pale twilight wash in Paper. No glow, halos or twinkling: the feel comes from the sky and the colour.
+The Mind Map is always dark, in Paper too: small, saturated dots, one colour per top-level folder, on a flat near-black. No title over it, no stars, glow, halos or twinkling. The page (and the small map in the side panel, and the tour's map) carries `data-theme="graphite"`, so its filters card, switches and labels are Graphite even when the app is Paper. The `--mm` colours are the same in both themes.
 
-| Use | Paper | Graphite | Token |
+| Use | Value | Token |
+|-----|-------|-------|
+| Background | `#141417`, flat | `--mm-sky` (`--mm-panel` for the small map in the side panel) |
+| Notes at the top level | `#94a5f9` | `--mm-0` |
+| Folders, in order (violet, amber, sky, pink, teal, coral, indigo, cyan) | `#a677f8` `#fac038` `#45bff7` `#f66fb7` `#23e7cc` `#f76e64` `#7b7bf4` `#25d8f4` | `--mm-1` … `--mm-8` |
+| Tag | `#e088f2` | `--mm-tag` |
+| Not written yet | `#5b648f` | `--mm-ghost` |
+| Open or hovered note | `#ffffff` | `--mm-focus` |
+| Link line | `rgba(170,180,255,.16)` | `--mm-line` |
+| Hovered link line | `#c5e8b2` (link green) | `--mm-hot` |
+
+| Practice heatmap | Paper | Graphite | Token |
 |-----|-------|----------|-------|
-| Notes at the top level | `#4055dd` | `#94a5f9` | `--mm-0` |
-| Folders, in order (violet, amber, sky, pink, teal, coral, indigo, cyan) | `#7e40e7` `#e58c06` `#0b8ecb` `#e2288b` `#109e8b` `#e83d30` `#4949df` `#0aa1b8` | `#a677f8` `#fac038` `#45bff7` `#f66fb7` `#23e7cc` `#f76e64` `#7b7bf4` `#25d8f4` | `--mm-1` … `--mm-8` |
-| Tag | `#b739d0` | `#e088f2` | `--mm-tag` |
-| Not written yet | `#abafc4` | `#5b648f` | `--mm-ghost` |
-| Open or hovered note | `#1d1a17` | `#ffffff` | `--mm-focus` |
-| Link line | `rgba(60,50,120,.14)` | `rgba(170,180,255,.16)` | `--mm-line` (hovered links turn link green) |
-| Sky | lavender into cream, faint peach and lavender clouds, a few grey specks | indigo into near black, violet and teal nebula washes, two scattered star tiles | `--mm-sky` (`--mm-panel` for the small map in the side panel, without stars) |
-| Practice heatmap | `#ebe4d8` `#ffd2c6` `#ffab95` `#ff8467` `#ff5b3a` | `#2a2a30`, then orange at 30 / 50 / 75 / 100% | `--heat-0` … `--heat-4` |
+| Empty, then busier days | `#ebe4d8` `#ffd2c6` `#ffab95` `#ff8467` `#ff5b3a` | `#2a2a30`, then orange at 30 / 50 / 75 / 100% | `--heat-0` … `--heat-4` |
 
 Dots are 1.6px across plus 0.7px for every square root of a note's links (the open note is 1.6 times bigger); the tap area stays 6px wider than the dot. Labels are 10.5px at 70% and appear when you zoom in or hover.
 
@@ -103,7 +107,6 @@ Dots are 1.6px across plus 0.7px for every square root of a note's links (the op
 | word of the day | Fraunces | 700 | 24px |  | -0.03em | the Dictionary |
 | dictionary word | Fraunces | 700 | 17px |  | -0.01em | Dictionary rows; the article (der, la…) in faint 600 |
 | letter | Fraunces | 800 | 20px |  | -0.02em | the Dictionary's sticky A to Z headers |
-| Mind Map title | Fraunces | 800 | 26px |  | -0.03em | over the sky, top left |
 | language name | Fraunces | 700 | 19px |  | -0.02em | welcome tiles |
 | practice bar | Fraunces | 750 | 18px |  | -0.02em | the deck name while practising |
 | note text | Instrument Sans | 400 | 16px |  | 0 | the editor |
@@ -152,7 +155,7 @@ Shadows are hard: no blur, offset straight down or down-right, in pure ink, so p
 
 ### Layout
 
-- **App:** Apple Notes layout. Sidebar (236px), notes list (320px), then the note, with the text column capped at 700px, plus an optional side panel (300px). On phones (820px and narrower) it opens on the Notes screen and shows one screen at a time, with a floating Notes · ＋ · Search tab bar; the ☰ button on Notes slides in the sidebar as a drawer.
+- **App:** Apple Notes layout. Sidebar (236px), notes list (320px), then the note, with the text column capped at 700px, plus an optional side panel (300px). On phones (820px and narrower) it opens on the Notes screen and shows one screen at a time, with a small floating bar: ‹ back, Notes, ＋, Search, › forward. The Notes screen's title is small (17px Fraunces 700) and centred between ☰ on the left and ••• and ✎ on the right; ☰ slides in the sidebar as a drawer.
 - **Sidebar order:** Folders first (All Notes, then your folders), a hairline, then Mind Map, Practice, Dictionary, Search, Add a word and Scan text. Learn the basics and Settings sit at the foot.
 - **Dictionary:** the narrow page column; sticky letter headers, hairline rows.
 - **Card padding:** 14 to 22px · **Element gap:** 6 to 12px · **Phone gutter:** 16px
@@ -244,7 +247,15 @@ White card, `2px` ink outline, 18px radius, `0 3px 0`. Language name in Fraunces
 Question side white, answer side Sun (ink text). `2px` ink outline, 28px radius in practice (24px in the welcome), and a `6px 6px 0` hard shadow on the face you can see. Short answers are Fraunces 800 at 34 to 48px. Cloze gaps are dashed ink boxes on Paper 2. A large “Reveal answer” button sits between 52px round previous and next buttons. It **flips** on the glide spring.
 
 ### Progress Bar
-10px pill in Paper 2 with a `1.5px` ink outline. The fill is orange with an ink right edge.
+10px pill in Paper 2 with a `1.5px` ink outline. The fill is orange with an ink right edge. The welcome uses an 8px one between **‹ Back** (from its second screen on) and Skip; never a row of little bars.
+
+### Backup Status
+One line in Paper 2 with a `1.5px` resting outline and a 12px radius, 600 at 13px: a check and "Saved 2 min ago to Documents › Cranoly · 42 notes", or "Saving…", or the problem in the error red. When a laptop browser wants a tap before writing to the folder again, a Sun tint row with an ink outline explains it, with an **Allow** button.
+
+### Bring In Sheet
+**Role:** what bringing in a backup from another device would change, before it does
+
+"From Laptop, saved 5 Oct, 14:02. 42 notes." then one Paper 2 row per change, icon, count in 700 and plain words ("3 new notes", "1 changed on both, so both versions are kept"). Bring in changes is the primary button; Replace everything with this opens an error-red outlined box that asks first. A faint line underneath says nothing here is lost. On phones the buttons are full width.
 
 ### Selection Bar
 **Role:** the bar above selected text: Flashcard · Link | Explain · Hear · …
@@ -267,13 +278,15 @@ Phones: Paper, a `2px` ink top edge, 30px top corners, an ink grab handle; rows 
 
 Ink pill (white in Graphite), `2px` ink outline, `0 3px 0`, 600. The action is Sun-coloured text (dark orange `#b54708` in Graphite). It **springs up** from the bottom.
 
-### Phone Tab Bar
-**Role:** Notes · ＋ · Search (everything else is in the ☰ drawer on the Notes screen)
+### Phone Bar
+**Role:** ‹ back, Notes, ＋, Search, › forward (everything else is in the ☰ drawer on the Notes screen)
 
-A white pill bar, 66px tall and up to 420px wide, with a `2px` ink outline and `0 4px 0`, floating 12px above the bottom edge. Tab labels are 11px 650 and muted. The active tab's icon sits on an **orange pill that slides** between tabs, and the icon **pops**. The centre ＋ is a 54px Sun circle with a `2px` ink outline and `0 3px 0`; it drops 2px and **turns 90°** when pressed.
+A white pill (card colour in Graphite), 54px tall and only as wide as its five buttons (about 250px), with a `2px` ink outline and `0 4px 0`, centred 10px above the bottom edge. Icons only, no labels. Notes and Search are 50×44 tabs; the active one's icon sits on a 46×34 **orange pill that slides** between them, and the icon **pops**. The centre ＋ is a 42px Sun circle with a `2px` ink outline and `0 3px 0`; it drops 2px and **turns 90°** when pressed. ‹ and › are 40×44 ink chevrons (24px, stroke 2.3); with nowhere to go they fade to faint at 50%. Pressed, each **nudges 3px** the way it goes.
+
+‹ and › walk the trail of places you visited, like a browser: a place is a screen, plus the open note on a note screen and the folder on Notes. The trail lasts for the session (a reload keeps it), skips deleted notes, and going somewhere new from the middle drops what was ahead. Android's back button follows the same trail, after closing anything open; from Notes it leaves the app.
 
 ### Eyebrow
-14px 600 muted text with an 18×3px solid rule before it. Never a dot.
+14px 600 muted text on its own line above a page title. Nothing before it: no rule, dash or dot.
 
 ## Motion
 
@@ -443,8 +456,9 @@ Main buttons get the tumbling label with `<Tumble label="Start">…</Tumble>` (s
 ### Don't
 - Don't switch to Slush's look: no hairline-only outlines, no shadowless buttons, no new palette or type scale. Borrow its motion only.
 - Don't use blurred shadows on cards or buttons. Shadows are hard and ink-coloured; the two soft exceptions are listed above.
-- Don't use gradients as colour. The two exceptions: the link highlighter (its hard stop reads as a flat stroke) and the Mind Map's sky.
-- Don't use glowing or pulsing dots anywhere. Markers are solid rules or pills.
+- Don't use gradients as colour. The one exception: the link highlighter (its hard stop reads as a flat stroke).
+- Don't use glowing or pulsing dots anywhere.
+- Don't draw a little bar, dash or dot in front of a label, and don't write em or en dashes in anything the app says. Short sentences, colons and commas instead.
 - Don't put anything but ink text on Sun, Sky, Lilac or Peach, in either theme.
 - Don't fade between selected items. The indicator must travel. In React, use `useSlider` and a `.slider-pill` in the container instead of styling the chosen item's own background.
 - Don't use Elastic for moves over ~40px (use Glide), or Bounce for anything bigger than an icon or chip.
@@ -487,7 +501,7 @@ Example Component Prompts:
 
 4. **Flashcard:** "A 28px-radius white card with a 2px #16141a outline and a hard 6px 6px 0 #16141a shadow. The word is Fraunces 800 at 44px, line height 1, -0.04em, centred. Tapping flips it 180° on the Y axis over 850ms with `--ease-glide` to a #ffd84d answer side."
 
-5. **Mind Map:** "A full-bleed night sky: a radial gradient from #13122b to #05050c with faint violet and teal nebula washes and scattered 1px stars. Notes are flat dots about 2 to 4px across in saturated colours (one per folder: #a677f8, #fac038, #45bff7, #f66fb7), joined by 0.7px lines in rgba(170,180,255,.16). No glow. The title 'Mind Map' in Fraunces 800 at 26px, top left, in #f1f0ff."
+5. **Mind Map:** "A full-bleed flat near-black (#141417), in both themes. Notes are flat dots about 2 to 4px across in saturated colours (one per folder: #a677f8, #fac038, #45bff7, #f66fb7), joined by 0.7px lines in rgba(170,180,255,.16). No title, stars or glow; the filters card floats top right in Graphite colours."
 
 ## Gradient System
 
